@@ -51,6 +51,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--purple)}
 .cat{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--txt);transition:transform .12s}
 .cat:active{transform:scale(.92)}
 .cat .ico{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:26px;color:#fff;box-shadow:0 6px 14px rgba(0,0,0,.12)}
+.cat .ico img{width:38px;height:38px;object-fit:contain;pointer-events:none}
 .g-red{background:linear-gradient(145deg,#ff8a7a,#ff4d6d)}
 .g-cyan{background:linear-gradient(145deg,#67d8ff,#3a7bd5)}
 .g-orange{background:linear-gradient(145deg,#ffc46b,#ff8a5c)}
@@ -354,27 +355,27 @@ const CONFIG = {
 };
 const LS = { sess: 'tr_sess', coursesCache: 'tr_courses_cache', recordsCache: 'tr_records_cache', favs: 'tr_favs' };
 const CATS = ['安全訓練', '機台操作', '冷鍛工藝', '品質管理', '知識庫', '其他'];
-const CAT_ICO = { '安全訓練': '🦺', '機台操作': '🔧', '冷鍛工藝': '⚙️', '品質管理': '✅', '知識庫': '📖', '其他': '📚' };
+const CAT_ICO = { '安全訓練': 'icons/safety.png', '機台操作': 'icons/machine.png', '冷鍛工藝': 'icons/forge.png', '品質管理': 'icons/quality.png', '知識庫': 'icons/knowledge.png', '其他': 'icons/other.png' };
 const CAT_CLS = { '安全訓練': 'g-red', '機台操作': 'g-cyan', '冷鍛工藝': 'g-orange', '品質管理': 'g-green', '知識庫': 'g-teal', '其他': 'g-pink' };
-const CAT_GRID = [{ name: '全部', ico: '🗂️', cls: 'g-blue' },
+const CAT_GRID = [{ name: '全部', ico: 'icons/all.png', cls: 'g-blue' },
   ...CATS.map(c => ({ name: c, ico: CAT_ICO[c], cls: CAT_CLS[c],
     ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachine()' } : {}) })),
-  { name: '計算公式', ico: '🧮', cls: 'g-amber', act: 'openCalc()' },
-  { name: '思維導圖', ico: '🧠', cls: 'g-teal', act: 'openMindmap()' },
-  { name: '問題反饋', ico: '💬', cls: 'g-pink', act: 'openFeedback()' }];
+  { name: '計算公式', ico: 'icons/calc.png', cls: 'g-amber', act: 'openCalc()' },
+  { name: '思維導圖', ico: 'icons/mindmap.png', cls: 'g-teal', act: 'openMindmap()' },
+  { name: '問題反饋', ico: 'icons/feedback.png', cls: 'g-pink', act: 'openFeedback()' }];
 
 const TOOLS = [
-  { name: '工作備忘錄', ico: '📝', cls: 'g-pink', file: 'notebook/index.html', sub: '自訂分類 · 圖片/PDF 附檔 · 日夜切換（筆記資料獨立儲存，不影響課程與訓練記錄）' },
-  { name: '模具記錄', ico: '🛠️', cls: 'g-teal', file: 'mold-record.html', sub: '一模具一頁：尺寸／類型／編號／位置／產品／cad × 1D–6D ＋備註，可匯出 PDF' },
+  { name: '工作備忘錄', ico: 'icons/memo.png', cls: 'g-pink', file: 'notebook/index.html', sub: '自訂分類 · 圖片/PDF 附檔 · 日夜切換（筆記資料獨立儲存，不影響課程與訓練記錄）' },
+  { name: '模具記錄', ico: 'icons/mold.png', cls: 'g-teal', file: 'mold-record.html', sub: '一模具一頁：尺寸／類型／編號／位置／產品／cad × 1D–6D ＋備註，可匯出 PDF' },
 ];
 
 const CALCS = [
-  { name: '圓切線計算', ico: '📐', cls: 'g-cyan', file: 'calc-tangent.html', sub: '兩圓相切：中心距、切點、公切線長幾何計算' },
-  { name: '圓棒重量', ico: '⚖️', cls: 'g-teal', file: 'calc-metal.html', sub: '圓棒/板材等金屬件重量估算' },
-  { name: '空心件重量', ico: '🕳️', cls: 'g-blue', file: 'calc-hollow.html', sub: '圓孔／六角孔／四角孔 · 五種材質 · 附剖面預覽' },
-  { name: '錐形件計算', ico: '🔩', cls: 'g-orange', file: 'calc-cone.html', sub: '填任意三項已知尺寸，自動算出未知項與重量（碳鋼 ρ=7.85）' },
-  { name: 'ch 計算機', ico: '🧠', cls: 'g-pink', file: 'calc-ch.html', sub: '一般／科學雙模式：括號、三角函數、冪次、階乘、度 rad 切換、日夜切換' },
-  { name: '冷鍛計算', ico: '⚒️', cls: 'g-red', file: 'calc-forge.html', sub: '鍛造噸位估算（五種成形／六種材質）· 多工位減面率 · 墩粗比檢查 · 日夜切換' },
+  { name: '圓切線計算', ico: 'icons/tangent.png', cls: 'g-cyan', file: 'calc-tangent.html', sub: '兩圓相切：中心距、切點、公切線長幾何計算' },
+  { name: '圓棒重量', ico: 'icons/weight.png', cls: 'g-teal', file: 'calc-metal.html', sub: '圓棒/板材等金屬件重量估算' },
+  { name: '空心件重量', ico: 'icons/hollow.png', cls: 'g-blue', file: 'calc-hollow.html', sub: '圓孔／六角孔／四角孔 · 五種材質 · 附剖面預覽' },
+  { name: '錐形件計算', ico: 'icons/cone.png', cls: 'g-orange', file: 'calc-cone.html', sub: '填任意三項已知尺寸，自動算出未知項與重量（碳鋼 ρ=7.85）' },
+  { name: 'ch 計算機', ico: 'icons/ch.png', cls: 'g-pink', file: 'calc-ch.html', sub: '一般／科學雙模式：括號、三角函數、冪次、階乘、度 rad 切換、日夜切換' },
+  { name: '冷鍛計算', ico: 'icons/coldforge.png', cls: 'g-red', file: 'calc-forge.html', sub: '鍛造噸位估算（五種成形／六種材質）· 多工位減面率 · 墩粗比檢查 · 日夜切換' },
 ];
 
 let session = null;            // { role: 'admin' | 'staff' }
@@ -519,23 +520,25 @@ function setNet(ok) {
 const courseName = id => { const c = courses.find(x => x.id == id); return c ? c.title : '（已刪除課程）'; };
 
 /* ══════════════════ 5. 渲染 ══════════════════ */
+function icoHtml(v) { return /\.png$/i.test(v) ? '<img src="' + v + '" alt="" width="38" height="38">' : v; }
 function renderAll() { renderCats(); renderCourses(); renderFavs(); renderRecords(); renderManage(); renderDash(); }
 function renderCats() {
   $('catGrid').innerHTML = CAT_GRID.map(c => `
     <button class="cat ${!c.act && c.name === curCat ? 'on' : ''}" onclick="${c.act || `setCat('${esc(c.name)}')`}">
-      <span class="ico ${c.cls}">${c.ico}</span>${esc(c.name)}
+      <span class="ico ${c.cls}">${icoHtml(c.ico)}</span>${esc(c.name)}
     </button>`).join('');
 }
 function openCalc() {
   $('calcGrid').innerHTML = CALCS.map((c, i) => `
     <button class="cat" onclick="openCalcTool(${i})">
-      <span class="ico ${c.cls}">${c.ico}</span>${esc(c.name)}
+      <span class="ico ${c.cls}">${icoHtml(c.ico)}</span>${esc(c.name)}
     </button>`).join('');
   go('viewCalc', document.querySelectorAll('#tabbar button')[0]);
 }
 function openCalcTool(i) {
   const c = CALCS[i];
-  $('calcIco').textContent = c.ico;
+  if (/\.png$/i.test(c.ico)) { $('calcIco').innerHTML = '<img src="' + c.ico + '" alt="" width="34" height="34">'; }
+  else { $('calcIco').textContent = c.ico; }
   $('calcName').textContent = c.name;
   $('calcSub').textContent = c.sub;
   const f = $('calcFrame');
@@ -556,41 +559,42 @@ function setCat(name) { curCat = name; renderCats(); renderCourses(); }
 function openTools() {
   $('toolGrid').innerHTML = TOOLS.map((t, i) => `
     <button class="cat" onclick="openTool(${i})">
-      <span class="ico ${t.cls}">${t.ico}</span>${esc(t.name)}
+      <span class="ico ${t.cls}">${icoHtml(t.ico)}</span>${esc(t.name)}
     </button>`).join('');
   go('viewTools', document.querySelectorAll('#tabbar button')[0]);
 }
 function openTool(i) { openApp(TOOLS[i]); }
 function openKB() {
   openApp({
-    ico: '📖', name: '知識庫記錄', file: 'knowledge-base.html',
+    ico: 'icons/knowledge.png', name: '知識庫記錄', file: 'knowledge-base.html',
     sub: '自訂分類 · 搜尋 · 可新增／編輯／刪除（內容同步到雲端，換手機抓得回來）',
     back: "goTab('viewHome',0)",
   });
 }
 function openMachine() {
   openApp({
-    ico: '🔧', name: '機台操作', file: 'p4.html',
+    ico: 'icons/machine.png', name: '機台操作', file: 'p4.html',
     sub: '機台操作規範與說明（p4）',
     back: "goTab('viewHome',0)",
   });
 }
 function openMindmap() {
   openApp({
-    ico: '🧠', name: '思維導圖', file: 'mindmap.html',
+    ico: 'icons/mindmap.png', name: '思維導圖', file: 'mindmap.html',
     sub: '心智圖 / 思維導圖工具（本機儲存）',
     back: "goTab('viewHome',0)",
   });
 }
 function openFeedback() {
   openApp({
-    ico: '💬', name: '問題反饋', file: 'feedback.html',
+    ico: 'icons/feedback.png', name: '問題反饋', file: 'feedback.html',
     sub: '回報問題與建議（本機儲存）',
     back: "goTab('viewHome',0)",
   });
 }
 function openApp(t) {
-  $('toolIco').textContent = t.ico;
+  if (/\.png$/i.test(t.ico)) { $('toolIco').innerHTML = '<img src="' + t.ico + '" alt="" width="34" height="34">'; }
+  else { $('toolIco').textContent = t.ico; }
   $('toolName').textContent = t.name;
   $('toolSub').textContent = t.sub;
   $('toolBack').setAttribute('onclick', t.back || 'openTools()');
