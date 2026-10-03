@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知識庫記錄</title>
+<style>
+:root{--bg:#f8fafc;--card:#fff;--text:#1e293b;--sub:#64748b;--border:#e2e8f0;--accent:#6366f1;--accent2:#8b5cf6;--hover:#eef2ff;--tag-bg:#f1f5f9;--del:#ef4444;--del-bg:#fef2f2}
+.dark{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--sub:#94a3b8;--border:#334155;--accent:#818cf8;--hover:#1e1b4b;--tag-bg:#334155;--del:#fca5a5;--del-bg:#7f1d1d}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);transition:.3s}
+.container{max-width:940px;margin:0 auto;padding:24px 16px}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.header h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:8px}
+.header h1 small{font-size:.75rem;font-weight:400;color:var(--sub);-webkit-text-fill-color:var(--sub)}
+.header h1 .logo{width:34px;height:34px;border-radius:8px;background:#fff;object-fit:contain;flex-shrink:0;-webkit-text-fill-color:initial}
+.header-actions{display:flex;gap:8px;align-items:center}
+.theme-btn{width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:var(--card);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:.2s;color:var(--text)}
+
+/* Search */
+.search-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:180px;position:relative}
+.search-wrap input{width:100%;padding:10px 14px 10px 36px;border:2px solid var(--border);border-radius:10px;font-size:.9rem;background:var(--card);color:var(--text);transition:.2s;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.5}
+.add-btn{padding:10px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:600;font-size:.88rem;cursor:pointer;transition:.15s;white-space:nowrap}
+.add-btn:hover{opacity:.9}
+.add-btn:active{transform:scale(.97)}
+.edit-toggle-btn{padding:10px 14px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--sub);font-weight:600;font-size:.82rem;cursor:pointer;transition:.15s;white-space:nowrap}
+.edit-toggle-btn:hover{border-color:var(--accent);color:var(--accent)}
+.edit-toggle-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:transparent}
+
+/* Category tabs */
+.cat-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.cat-btn{padding:5px 12px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);color:var(--sub);cursor:pointer;font-size:.8rem;font-weight:500;transition:.2s}
+.cat-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cat-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:transparent}
+
+/* Entries */
+.entry{border:1px solid var(--border);border-radius:10px;margin-bottom:7px;overflow:hidden;background:var(--card);transition:.15s}
+.entry:hover{border-color:var(--accent)}
+.entry-header{padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem;transition:.1s;user-select:none}
+.entry-header:hover{background:var(--hover)}
+.entry-header .arrow{transition:transform .25s;font-size:.65rem;color:var(--sub);margin-left:auto}
+.entry.open .entry-header .arrow{transform:rotate(180deg)}
+.entry-body{padding:0 14px 14px;display:none;border-top:1px solid var(--border);padding-top:12px;font-size:.85rem;line-height:1.65;color:var(--sub)}
+.entry.open .entry-body{display:block}
+.entry-body a{color:var(--accent)}
+.entry-body code{background:var(--tag-bg);padding:1px 5px;border-radius:4px;font-size:.8rem}
+.entry-body pre{background:var(--tag-bg);padding:10px;border-radius:6px;font-size:.8rem;margin:6px 0;overflow-x:auto;font-family:'Cascadia Code','Fira Code',monospace;line-height:1.4}
+.entry-body ul{padding-left:16px;margin:4px 0}
+.entry-body li{margin:2px 0}
+.entry-body strong{color:var(--text)}
+.entry-body table{width:100%;border-collapse:collapse;font-size:.82rem;margin:6px 0}
+.entry-body td,.entry-body th{padding:5px 8px;border:1px solid var(--border)}
+
+/* Edit mode */
+.entry.edit-mode .entry-header,.entry.edit-mode .entry-body{display:none}
+.entry.edit-mode .edit-form{display:block}
+.edit-form{display:none;padding:14px}
+.edit-form label{display:block;font-size:.8rem;font-weight:600;color:var(--sub);margin-bottom:4px;margin-top:10px}
+.edit-form label:first-child{margin-top:0}
+.edit-form input,.edit-form textarea,.edit-form select{width:100%;padding:8px 10px;border:2px solid var(--border);border-radius:8px;background:var(--tag-bg);color:var(--text);font-size:.85rem;font-family:inherit;transition:.15s}
+.edit-form input:focus,.edit-form textarea:focus{outline:none;border-color:var(--accent)}
+.edit-form textarea{min-height:120px;resize:vertical;line-height:1.5}
+.edit-form-actions{display:flex;gap:6px;margin-top:10px}
+.edit-form-actions button{padding:8px 16px;border-radius:8px;border:none;font-weight:600;font-size:.82rem;cursor:pointer;transition:.15s}
+.btn-save{background:var(--accent);color:#fff}.btn-save:hover{opacity:.9}
+.btn-cancel{background:var(--tag-bg);color:var(--text)}.btn-cancel:hover{opacity:.8}
+.btn-del{background:var(--del-bg);color:var(--del);margin-left:auto}.btn-del:hover{opacity:.8}
+
+/* Toolbar on each entry (non-edit) */
+.entry-toolbar{display:flex;gap:4px;margin-left:auto}
+.entry-toolbar button{background:var(--tag-bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:.72rem;cursor:pointer;color:var(--sub);transition:.1s;font-weight:500}
+.entry-toolbar button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.entry-toolbar .del-btn:hover{background:var(--del);color:#fff}
+
+.empty-msg{text-align:center;color:var(--sub);padding:30px 0;font-size:.85rem}
+.count{text-align:center;font-size:.78rem;color:var(--sub);margin-top:10px}
+.sync{text-align:center;font-size:.72rem;color:var(--sub);margin-top:4px;min-height:1em}
+.sync.bad{color:#e03131;font-weight:600}
+
+@media(max-width:500px){.entry-header{padding:10px 12px}.entry-body{padding:0 12px 12px}.container{padding:14px 10px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1><img class="logo" src="assets/zhongjian-logo-512.jpg" alt="忠鍵" />知識庫記錄 <small>✏️ 可編輯</small></h1>
+    <div class="header-actions">
+      <button class="edit-toggle-btn" id="editToggleBtn" onclick="toggleEditAll()">✏️ 編輯模式</button>
+      <button class="theme-btn" id="themeBtn">🌙</button>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search" placeholder="搜尋...">
+    </div>
+    <button class="add-btn" onclick="openAddForm()">＋ 新增</button>
+  </div>
+
+  <div class="cat-row" id="catRow"></div>
+  <div id="entries"></div>
+  <div class="count" id="count"></div>
+  <div class="sync" id="sync"></div>
+</div>
+
+<script>
+// ─── Supabase（與訓練 App／工作備忘錄共用同一專案，資料存在 tool_storage 的 key='knowledge_base' 這一列）───
+const SB_URL = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
+const SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
+const SB_KEY = 'knowledge_base';
+
+async function loadFromCloud(){
+  try{
+    const r = await fetch(SB_URL+'/rest/v1/tool_storage?key=eq.'+SB_KEY+'&select=data',{
+      headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON}
+    });
+    if(!r.ok) return null;
+    const d = await r.json();
+    // 有這一列就算數（回傳空陣代表「刻意留空」，不能當成「沒資料」而退回本機預設值）
+    if(d&&d[0]&&Array.isArray(d[0].data))
+      return d[0].data;
+  }catch(e){}
+  return null;
+}
+
+async function saveToCloud(data){
+  const H = {apikey:SB_ANON,Authorization:'Bearer '+SB_ANON,'Content-Type':'application/json'};
+  try{
+    // 用 PATCH 更新整列；POST upsert 會因 id 是主鍵、只對 key 建立唯一限制而回 409
+    let r = await fetch(SB_URL+'/rest/v1/tool_storage?key=eq.'+SB_KEY,{
+      method:'PATCH',headers:{...H,Prefer:'return=representation'},
+      body:JSON.stringify({data:data})
+    });
+    if(!r.ok) throw 0;
+    const rows = await r.json();
+    if(Array.isArray(rows)&&rows.length) return true;
+    // 這一列不存在（第一次用／資料庫被清過）→ 建立
+    r = await fetch(SB_URL+'/rest/v1/tool_storage',{
+      method:'POST',headers:{...H,Prefer:'resolution=merge-duplicates,return=representation'},
+      body:JSON.stringify({key:SB_KEY,data:data})
+    });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+// ─── State ───
+let data = [];
+let dark = false;
+let activeCat = '全部';
+let editAllMode = false;
+let saving = false;
+let again = false;
+
+function syncUi(ok, checked){
+  const el = document.getElementById('sync');
+  if(!el) return;
+  el.className = 'sync' + (ok ? '' : ' bad');
+  el.textContent = ok ? '☁️ 已同步到雲端' : (checked ? '⚠️ 雲端同步失敗，資料先留在本機（請檢查網路後再按一次儲存）' : '');
+}
+
+// 本機有還沒推上雲頭的資料時標記，重載時以本機為準（避免被雲端的舊內容蓋掉）
+function markDirty(on){ if(on) localStorage.setItem('kbDirty','1'); else localStorage.removeItem('kbDirty'); }
+
+// ─── Load (雲端優先；但有未同步的本機修改時本機優先) ───
+async function loadData(){
+  const local = readLocal();
+  if(localStorage.getItem('kbDirty')==='1' && local.length){
+    data = local;
+    const ok = await saveToCloud(data);
+    markDirty(!ok);
+    syncUi(ok, true);
+    return;
+  }
+  const cloud = await loadFromCloud();
+  if(cloud){data=cloud;saveLocal();syncUi(true,true);return;}
+  data = local;
+  syncUi(false, false);
+  if(data.length){
+    const ok = await saveToCloud(data);
+    markDirty(!ok);
+    syncUi(ok, true);
+  }
+}
+
+function readLocal(){
+  let local = [];
+  const saved = localStorage.getItem('kbData');
+  if(saved){try{local=JSON.parse(saved)}catch(e){local=[]}}
+  return Array.isArray(local) ? local : [];
+}
+
+function saveLocal(){localStorage.setItem('kbData',JSON.stringify(data));}
+function saveData(){
+  saveLocal();
+  if(saving){again=true;return;}
+  pushCloud();
+}
+function pushCloud(){
+  saving = true;
+  saveToCloud(data).then(ok=>{
+    saving = false;
+    markDirty(!ok);
+    syncUi(ok, true);
+    if(again){again=false;pushCloud();}
+  });
+}
+
+// ─── Render ───
+function getCats(){
+  const cats = ['全部'];
+  const set = new Set(data.map(d=>d.cat));
+  set.forEach(c=>cats.push(c));
+  // Re-sort: 全部 first, rest alphabetically-ish
+  const ordered = ['電腦操作','開發工具','系統維運','金屬材料'];
+  const rest = cats.filter(c=>c!=='全部'&&!ordered.includes(c));
+  return ['全部', ...ordered.filter(c=>set.has(c)), ...rest];
+}
+
+function render(){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  let items = data.filter(d=>activeCat==='全部'||d.cat===activeCat);
+  if(q) items = items.filter(d=>d.q.toLowerCase().includes(q)||d.a.toLowerCase().includes(q)||d.cat.includes(q));
+
+  // Update categories
+  const catRow = document.getElementById('catRow');
+  catRow.innerHTML = '';
+  const cats = getCats();
+  cats.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn'+(c===activeCat?' active':'');
+    btn.textContent = c;
+    btn.onclick = ()=>{activeCat=c;render();};
+    catRow.appendChild(btn);
+  });
+
+  // Render entries
+  const container = document.getElementById('entries');
+  if(!items.length){
+    container.innerHTML = '<div class="empty-msg">'+(data.length?'🔍 沒有符合的結果':'📭 目前沒有記錄，按上方「＋ 新增」建立第一筆')+'</div>';
+    document.getElementById('count').textContent = '0 筆';
+    return;
+  }
+
+  container.innerHTML = items.map((d,i)=>{
+    const globalIdx = data.indexOf(d);
+    const editBtns = editAllMode ? `
+      <button onclick="editEntry(${globalIdx})">✏️</button>
+      <button class="del-btn" onclick="delEntry(${globalIdx})">🗑️</button>
+    ` : '';
+    return `
+    <div class="entry" data-idx="${globalIdx}">
+      <div class="entry-header" onclick="toggle(this)">
+        <span>${d.q}</span>
+        <div class="entry-toolbar">${editBtns}</div>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="entry-body">${d.a}</div>
+      <div class="edit-form"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('count').textContent = `共 ${items.length} 筆`;
+}
+
+// ─── Toggle ───
+function toggle(el){
+  const entry = el.closest('.entry');
+  if(!entry||entry.classList.contains('edit-mode')) return;
+  entry.classList.toggle('open');
+}
+
+// ─── Edit ───
+function toggleEditAll(){
+  editAllMode = !editAllMode;
+  document.getElementById('editToggleBtn').classList.toggle('active',editAllMode);
+  document.getElementById('editToggleBtn').textContent = editAllMode?'🔒 離開編輯':'✏️ 編輯模式';
+  render();
+}
+
+function editEntry(idx){
+  const entry = document.querySelector(`.entry[data-idx="${idx}"]`);
+  if(!entry) return;
+  const d = data[idx];
+  entry.classList.add('edit-mode');
+  entry.querySelector('.edit-form').innerHTML = `
+    <label>分類</label>
+    <select id="editCat${idx}">
+      ${getCats().filter(c=>c!=='全部').map(c=>`<option${c===d.cat?' selected':''}>${c}</option>`).join('')}
+      <option value="__new__">＋ 新增分類</option>
+    </select>
+    <label>問題標題</label>
+    <input id="editQ${idx}" value="${d.q.replace(/"/g,'&quot;')}">
+    <label>回答內容（支援 HTML 標籤）</label>
+    <textarea id="editA${idx}">${d.a.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+    <div class="edit-form-actions">
+      <button class="btn-save" onclick="saveEntry(${idx})">💾 儲存</button>
+      <button class="btn-cancel" onclick="cancelEdit(${idx})">取消</button>
+      <button class="btn-del" onclick="delEntry(${idx})">🗑️ 刪除</button>
+    </div>`;
+}
+
+function saveEntry(idx){
+  const d = data[idx];
+  const cat = document.getElementById(`editCat${idx}`).value;
+  const q = document.getElementById(`editQ${idx}`).value.trim();
+  const a = document.getElementById(`editA${idx}`).value.trim();
+  if(!q||!a){alert('問題和回答不可空白');return;}
+  if(cat==='__new__'){
+    const nc = prompt('請輸入新分類名稱：');
+    if(!nc||!nc.trim()) return;
+    data[idx].cat = nc.trim();
+  } else data[idx].cat = cat;
+  data[idx].q = q;
+  data[idx].a = a;
+  saveData();
+  const entry = document.querySelector(`.entry[data-idx="${idx}"]`);
+  if(entry) entry.classList.remove('edit-mode');
+  render();
+}
+
+function cancelEdit(idx){
+  const entry = document.querySelector(`.entry[data-idx="${idx}"]`);
+  if(entry) entry.classList.remove('edit-mode');
+}
+
+function delEntry(idx){
+  if(!confirm(`確定刪除「${data[idx].q}」？`)) return;
+  data.splice(idx,1);
+  saveData();
+  render();
+}
+
+// ─── Add ───
+function openAddForm(){
+  activeCat = '全部';
+  render();
+  const idx = data.length;
+  data.push({cat:'電腦操作',q:'新條目',a:'請填寫內容'});
+  saveData();
+  render();
+  // Open edit mode on the new entry
+  setTimeout(()=>{
+    const entry = document.querySelector(`.entry[data-idx="${idx}"]`);
+    if(entry){entry.scrollIntoView({behavior:'smooth',block:'center'});editEntry(idx);}
+  },100);
+}
+
+// ─── Theme ───
+const themeBtn = document.getElementById('themeBtn');
+themeBtn.onclick = ()=>{
+  dark=!dark;
+  document.documentElement.classList.toggle('dark',dark);
+  themeBtn.textContent=dark?'☀️':'🌙';
+};
+
+// ─── Search ───
+document.getElementById('search').addEventListener('input',render);
+
+// ─── Init ───
+loadData().then(()=>render());
+</script>
+</body>
+</html>

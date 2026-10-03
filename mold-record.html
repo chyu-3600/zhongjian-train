@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>模具記錄</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+--bg: #f5f2ed; --card: #fff; --th-bg: #e8e3dc;
+--border: #cdc5ba; --border2: #ddd8d0;
+--fg: #2a221c; --fg2: #5a4e42; --muted: #a09888;
+--accent: #c0392b; --accent-dim: rgba(192,57,43,.08);
+--input-bg: #fff;
+}
+[data-theme="dark"] {
+--bg: #0a0e14; --card: #1a2030; --th-bg: #232b3d;
+--border: #2a3a50; --border2: #324260;
+--fg: #e8eaed; --fg2: #b0c0d8; --muted: #6b7280;
+--accent: #e74c3c; --accent-dim: rgba(231,76,60,.1);
+--input-bg: #111827;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;transition:background .3s,color .3s;padding:12px}
+.c{max-width:100%;margin:0 auto}
+.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 0}
+.hl{display:flex;align-items:center;gap:8px}
+.hl .ic{width:36px;height:36px;border-radius:8px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center}
+.hl .ic img{width:100%;height:100%;object-fit:contain;display:block}
+.hl .ht{font-size:18px;font-weight:700}
+.hdr{display:flex;align-items:center;gap:6px}
+.th-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--fg2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .3s}
+.th-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tb{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+.btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--fg2);font-size:11px;cursor:pointer;transition:all .3s;font-family:inherit;display:flex;align-items:center;gap:4px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:#e74c3c}
+.btn.green{background:#27ae60;color:#fff;border-color:#27ae60}
+.btn.green:hover{background:#2ecc71}
+.btn.blue{background:#2980b9;color:#fff;border-color:#2980b9}
+.btn.blue:hover{background:#3498db}
+.btn.danger:hover{border-color:#e74c3c;color:#e74c3c}
+/* Mold switcher */
+.ms{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+.ms::-webkit-scrollbar{display:none}
+.mt{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--fg2);font-size:11px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.mt:hover{border-color:var(--accent);color:var(--accent)}
+.mt.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Table */
+.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--border);background:var(--card)}
+table{width:100%;border-collapse:collapse;min-width:480px;font-size:13px;table-layout:fixed}
+td,th{border:1px solid var(--border);padding:5px 3px;text-align:center}
+th{background:var(--th-bg);color:var(--fg2);font-weight:600;font-size:11px;white-space:nowrap;position:sticky;top:0;z-index:1}
+th:first-child{width:40px}
+th:nth-child(7){min-width:55px}
+td:first-child{text-align:left;padding-left:4px;font-weight:500;color:var(--fg);font-size:11px;background:var(--th-bg);width:40px;min-width:40px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td:last-child{min-width:60px}
+td input,td select{width:100%;padding:4px 2px;border:none;background:transparent;color:var(--fg);font-size:11px;text-align:center;outline:none;font-family:inherit}
+td input:focus,td select:focus{background:var(--accent-dim);border-radius:3px}
+td select{-webkit-appearance:none;appearance:none;text-align-last:center;cursor:pointer}
+td select option{background:var(--input-bg);color:var(--fg)}
+td.note input{text-align:left}
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--muted)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%)translateY(100px);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:12px;color:var(--fg);z-index:200;transition:transform .4s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{transform:translateX(-50%)translateY(0)}
+.toast i{color:var(--accent);margin-right:4px}
+</style>
+</head>
+<body>
+<div class="c">
+<div class="hd">
+<div class="hl"><div class="ic"><img src="assets/zhongjian-logo-512.jpg" alt="忠鍵"></div><div class="ht">模具記錄</div></div>
+<div class="hdr">
+<button class="th-btn" id="thBtn"><i class="fas fa-moon" id="thIcon"></i></button>
+</div>
+</div>
+<div class="tb">
+<button class="btn green" onclick="newMold()"><i class="fas fa-plus"></i> 新增模具</button>
+<button class="btn blue" onclick="sv()"><i class="fas fa-save"></i> 儲存</button>
+<button class="btn" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+<button class="btn danger" onclick="delMold()"><i class="fas fa-trash"></i> 刪除</button>
+<button class="btn" onclick="renMold()"><i class="fas fa-pen"></i> 重新命名</button>
+</div>
+<div class="ms" id="moldTabs"></div>
+<div class="tw">
+<table>
+<thead><tr>
+<th>項目</th><th>1D</th><th>2D</th><th>3D</th><th>4D</th><th>5D</th><th>6D</th><th>備註</th>
+</tr></thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+<div class="footer">模具記錄 · 一模具一整頁</div>
+</div>
+<div class="toast" id="toast"><span id="tm"></span></div>
+
+<script>
+// 主題
+(function(){
+  if(localStorage.getItem('mold-theme')==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    document.getElementById('thIcon').className='fas fa-sun';
+  }
+})();
+document.getElementById('thBtn').onclick=()=>{
+  const d=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',d?'light':'dark');
+  document.getElementById('thIcon').className=d?'fas fa-moon':'fas fa-sun';
+  localStorage.setItem('mold-theme',d?'light':'dark');
+};
+
+// 資料結構：{ m: { id: { name, rows:[{label,d1..d6,note}] } }, order: [] }
+const LABELS = ['尺寸','類型','編號','位置','產品','cad'];
+const TYPES = ['R模','直孔模','束模','塑型模','活動模'];
+let db = JSON.parse(localStorage.getItem('mold-db')) || {m:{},order:[]};
+let cur = null;
+
+function $(id){return document.getElementById(id)}
+function msg(m){const t=$('toast');$('tm').innerHTML='<i class="fas fa-check-circle"></i>'+m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
+
+function saveDB(){localStorage.setItem('mold-db',JSON.stringify(db));}
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+
+// 新增模具
+function newMold(){
+  const name = prompt('請輸入模具名稱：');
+  if(!name||!name.trim()) return;
+  const id = genId();
+  db.m[id] = {name:name.trim(), rows:LABELS.map(l=>({label:l,d1:'',d2:'',d3:'',d4:'',d5:'',d6:'',note:''})), note:''};
+  db.order.push(id);
+  cur = id;
+  saveDB();render();msg('已新增：'+name.trim());
+}
+
+// 刪除
+function delMold(){
+  if(!cur||!db.m[cur]) return;
+  if(!confirm('確定刪除「'+db.m[cur].name+'」？')) return;
+  db.order = db.order.filter(i=>i!==cur);
+  delete db.m[cur];
+  cur = db.order.length ? db.order[db.order.length-1] : null;
+  saveDB();render();msg('已刪除');
+}
+
+// 重新命名
+function renMold(){
+  if(!cur||!db.m[cur]) return;
+  const n = prompt('新名稱：', db.m[cur].name);
+  if(n&&n.trim()){db.m[cur].name=n.trim();saveDB();render();msg('已更名');}
+}
+
+// 切換模具
+function switchMold(id){cur=id;render();}
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+
+// 「類型」這一列改成下拉；舊資料若不在選項內會暫時掛在選項裡，不會被清掉
+function typeCell(r,i,f){
+  const v = r[f]||'';
+  const list = (v && !TYPES.includes(v)) ? TYPES.concat([v]) : TYPES;
+  return `<td><select data-r="${i}" data-f="${f}" onchange="inp(this)">`
+    + `<option value=""${v===''?' selected':''}>—</option>`
+    + list.map(t=>`<option${t===v?' selected':''}>${esc(t)}</option>`).join('')
+    + `</select></td>`;
+}
+
+function txtCell(r,i,f,cls){
+  return `<td${cls?' class="'+cls+'"':''}><input type="text" data-r="${i}" data-f="${f}" value="${esc(r[f])}" oninput="inp(this)"></td>`;
+}
+
+function render(){
+  renderTabs();
+  if(!cur||!db.m[cur]){
+    $('tb').innerHTML = '<tr><td colspan="8" style="padding:30px;color:var(--muted);font-size:12px;border:none">按「新增模具」開始</td></tr>';
+    return;
+  }
+  const m = db.m[cur];
+  const F = ['d1','d2','d3','d4','d5','d6'];
+  $('tb').innerHTML = m.rows.map((r,i) => `<tr>
+    <td>${r.label}</td>
+    ${F.map(f => r.label==='類型' ? typeCell(r,i,f) : txtCell(r,i,f)).join('')}
+    ${txtCell(r,i,'note','note')}
+  </tr>`).join('');
+}
+
+function renderTabs(){
+  const el = $('moldTabs');
+  if(!db.order.length){el.innerHTML='';return;}
+  el.innerHTML = db.order.map(id => {
+    const m = db.m[id];
+    if(!m) return '';
+    const a = id===cur?'active':'';
+    return `<div class="mt ${a}" onclick="switchMold('${id}')">${m.name}</div>`;
+  }).join('');
+}
+
+function inp(el){
+  if(!cur||!db.m[cur]) return;
+  const ri = parseInt(el.dataset.r), f = el.dataset.f;
+  db.m[cur].rows[ri][f] = el.value;
+  saveDB();
+}
+
+function sv(){
+  if(!cur||!db.m[cur]) return;
+  // Save note - add note field below table or keep as-is
+  saveDB();msg('已儲存 ✅');
+}
+
+// 匯出 PDF
+function exportPDF(){
+  if(!cur||!db.m[cur]){msg('沒有資料可匯出');return;}
+  const m=db.m[cur];
+  var w=window.open('','_blank');
+  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>'+m.name+'</title>';
+  h+='<style>*{margin:0;padding:0;box-sizing:border-box}';
+  h+='body{font-family:sans-serif;padding:16px;background:#fff;color:#222}';
+  h+='.tb{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}';  
+  h+='.tb a{padding:10px 20px;border-radius:8px;background:#c0392b;color:#fff;text-decoration:none;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}';
+  h+='.tb a.s{background:#2980b9}';
+  h+='h2{margin-bottom:12px;font-size:18px}';
+  h+='table{width:100%;border-collapse:collapse;font-size:13px}'; 
+  h+='th,td{border:1px solid #bbb;padding:6px 5px;text-align:center}'; 
+  h+='th{background:#e8e3dc;font-size:12px}td:first-child{background:#f5f2ed;font-weight:500;width:60px}'; 
+  h+='@media print{.tb{display:none}}'; 
+  h+='</style></head><body>';
+  h+='<div class="tb"><a href="#" onclick="window.print();return false">🖨️ 列印</a><a href="#" class="s" onclick="share();return false">📤 分享</a></div>';
+  h+='<script>function share(){if(navigator.share){navigator.share({title:\''+m.name+'\',text:document.getElementById(\'d\').innerText});}}<\/script>';
+  h+='<h2>'+m.name+'</h2>';
+  h+='<div id="d"><table><thead><tr><th>項目</th><th>1D</th><th>2D</th><th>3D</th><th>4D</th><th>5D</th><th>6D</th><th>備註</th></tr></thead><tbody>';
+  m.rows.forEach(function(r){
+    h+='<tr><td>'+r.label+'</td>'; 
+    ['d1','d2','d3','d4','d5','d6'].forEach(function(f){h+='<td>'+(r[f]||'')+'</td>';});
+    h+='<td>'+(r.note||'')+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<p style="font-size:10px;color:#999;text-align:center;margin-top:16px">'+new Date().toLocaleString('zh-TW')+'</p>';
+  h+='</body></html>';
+  w.document.write(h);w.document.close();
+}
+
+// 初始化 — 選最後一個模具
+if(db.order.length) cur = db.order[db.order.length-1];
+render();
+</script>
+</body>
+</html>

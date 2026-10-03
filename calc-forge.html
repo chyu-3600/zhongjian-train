@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="day">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冷鍛計算</title>
+<style>
+  :root {
+    --bg: #eef2f7;
+    --bg2: #ffe8ee;
+    --bg3: #dce8ff;
+    --card: #ffffff;
+    --ink: #1c2434;
+    --muted: #667085;
+    --line: #e6eaf0;
+    --accent: #c43b4e;
+    --accent-2: #2f6fed;
+    --accent-soft: rgba(196, 59, 78, 0.12);
+    --input: #fbfcfe;
+    --input-border: #d7dde6;
+    --result: linear-gradient(180deg, #f7f9fc 0%, #f3f6fa 100%);
+    --ok: #0f8a4b;
+    --warn: #c46a00;
+    --bad: #c43b4e;
+    --shadow: 0 10px 30px rgba(28, 36, 52, 0.08);
+    --radius: 16px;
+    --ghost-bg: #fff;
+    --ghost-bd: #c9d2de;
+  }
+  html[data-theme="night"] {
+    --bg: #121826;
+    --bg2: #2a1630;
+    --bg3: #10233f;
+    --card: #1b2436;
+    --ink: #e8eef8;
+    --muted: #9aa7bd;
+    --line: #2c3850;
+    --accent: #ff6b81;
+    --accent-2: #7aa2ff;
+    --accent-soft: rgba(255, 107, 129, 0.18);
+    --input: #151d2c;
+    --input-border: #33415c;
+    --result: linear-gradient(180deg, #162033 0%, #131b2b 100%);
+    --ok: #3dd68c;
+    --warn: #ffb020;
+    --bad: #ff6b81;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    --ghost-bg: #1b2436;
+    --ghost-bd: #3a4864;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    background:
+      radial-gradient(1200px 400px at 10% -10%, var(--bg2) 0%, transparent 55%),
+      radial-gradient(900px 360px at 100% 0%, var(--bg3) 0%, transparent 50%),
+      var(--bg);
+    color: var(--ink);
+    padding: 24px 16px 48px;
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  .hero {
+    position: relative;
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .hero h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .hero p { color: var(--muted); font-size: 0.92rem; }
+  .brand-ico {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, var(--accent), #8b2a3a);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 18px var(--accent-soft);
+  }
+  .brand-ico svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 1.8; }
+  .theme-btn {
+    position: absolute; right: 0; top: 0;
+    width: 44px; height: 44px; border-radius: 12px;
+    border: 1px solid var(--input-border);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+  }
+  .theme-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+  html[data-theme="day"] .ico-moon { display: none; }
+  html[data-theme="night"] .ico-sun { display: none; }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 1.12rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .ico {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ico svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ico-red { background: linear-gradient(145deg, #e85d6c, #b3263a); }
+  .ico-blue { background: linear-gradient(145deg, #5b8cff, #2f5fd6); }
+  .ico-teal { background: linear-gradient(145deg, #2ec4b6, #1a8f84); }
+  .ico-amber { background: linear-gradient(145deg, #f0a202, #c47a00); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .field { flex: 1; min-width: 150px; }
+  .field label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    background: var(--input);
+    color: var(--ink);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .unit { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .result {
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: var(--result);
+    border-radius: 12px;
+    border-left: 4px solid var(--accent);
+    line-height: 1.75;
+    min-height: 64px;
+  }
+  .result strong { color: var(--accent); }
+  .ok { color: var(--ok); font-weight: 700; }
+  .warn { color: var(--warn); font-weight: 700; }
+  .bad { color: var(--bad); font-weight: 700; }
+  .big { font-size: 1.35rem; font-weight: 800; letter-spacing: 0.02em; }
+  hr { border: none; border-top: 1px dashed var(--line); margin: 10px 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ghost-btn {
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-top: 8px;
+    border: 1px dashed var(--ghost-bd);
+    background: var(--ghost-bg);
+    color: var(--ink);
+  }
+  .inline-dia {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 8px; font-size: 0.8rem; color: var(--muted);
+  }
+  .inline-dia input {
+    width: 96px; padding: 6px 8px; border-radius: 8px;
+    border: 1px solid var(--input-border); background: var(--input); color: var(--ink);
+  }
+  .note { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
+  @media (max-width: 720px) {
+    .two-col { grid-template-columns: 1fr; }
+    .row { flex-direction: column; }
+    .theme-btn { position: static; margin: 0 auto 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <button type="button" class="theme-btn" id="themeBtn" aria-label="日夜切換">
+      <svg class="ico-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="ico-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 7 7 0 0 0 20 14.5z"/></svg>
+    </button>
+    <h1>
+      <span class="brand-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 19h10M7 19V8l5-3 5 3v11M9 12h6M9 15h6"/></svg>
+      </span>
+      冷鍛計算
+    </h1>
+    <p>鍛造噸位 · 減面率 · 墩粗比</p>
+  </header>
+
+  <section class="card">
+    <h2>
+      <span class="ico ico-red" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20l8-8M14 4l6 6M9 15l6-6M13 5l6 2-8 8-2-6z"/></svg></span>
+      鍛造噸位估算
+    </h2>
+    <div class="row">
+      <div class="field">
+        <label>成形方式</label>
+        <select id="forgeType">
+          <option value="heading">打頭</option>
+          <option value="extrude_fwd">前向擠出</option>
+          <option value="extrude_bwd">後向擠出</option>
+          <option value="trimming">剪切／修邊</option>
+          <option value="coining">壓印</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>材料</label>
+        <select id="material">
+          <option value="lowC">低碳鋼（1010～1020）— 降伏 250 百萬帕</option>
+          <option value="midC" selected>中碳鋼（1035～1045）— 降伏 350 百萬帕</option>
+          <option value="alloy">合金鋼（鉻鉬鋼 435）— 降伏 500 百萬帕</option>
+          <option value="stainless">不鏽鋼（304）— 降伏 520 百萬帕</option>
+          <option value="aluminum">鋁合金 — 降伏 150 百萬帕</option>
+          <option value="copper">銅合金 — 降伏 200 百萬帕</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>自訂降伏強度（百萬帕）</label>
+        <input type="number" id="yieldCustom" placeholder="空白則用材料預設" step="1" min="0">
+        <div class="unit">填寫後會覆蓋上方材料預設值</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>投影面積（平方毫米）</label>
+        <input type="number" id="area" placeholder="受力方向投影面積" step="0.1" min="0">
+        <div class="unit">圓形面積＝圓周率 ×（直徑／2）²</div>
+      </div>
+      <div class="field">
+        <label>直徑或對邊（毫米）</label>
+        <input type="number" id="diameter" placeholder="輸入後自動換算面積" step="0.1" min="0">
+      </div>
+      <div class="field">
+        <label>安全係數</label>
+        <select id="safetyFactor">
+          <option value="1.2">1.2　連續生產</option>
+          <option value="1.3" selected>1.3　一般建議</option>
+          <option value="1.5">1.5　間歇或新模</option>
+          <option value="2.0">2.0　保守</option>
+        </select>
+      </div>
+    </div>
+    <div class="result" id="tonnageResult">請輸入面積並選擇材料</div>
+    <p class="note">公式：噸位力＝拘束係數 × 降伏強度 × 投影面積 × 安全係數</p>
+  </section>
+
+  <section class="card">
+    <h2>
+      <span class="ico ico-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></svg></span>
+      減面率計算（多工位）
+    </h2>
+    <div class="two-col">
+      <div>
+        <div class="field">
+          <label>線材直徑（毫米）</label>
+          <input type="number" id="wireDia" placeholder="原始線徑" step="0.01" min="0">
+        </div>
+        <div style="margin-top:12px;">
+          <label style="font-size:0.82rem;font-weight:700;color:var(--muted);">各工位斷面積（平方毫米）</label>
+          <div id="stationInputs">
+            <div class="field" style="margin-top:6px;"><input type="number" placeholder="工位 1 斷面積" step="0.01" min="0" class="station-area"></div>
+            <div class="field" style="margin-top:6px;"><input type="number" placeholder="工位 2 斷面積" step="0.01" min="0" class="station-area"></div>
+            <div class="field" style="margin-top:6px;"><input type="number" placeholder="工位 3 斷面積" step="0.01" min="0" class="station-area"></div>
+            <div class="field" style="margin-top:6px;"><input type="number" placeholder="工位 4 斷面積" step="0.01" min="0" class="station-area"></div>
+            <div class="field" style="margin-top:6px;"><input type="number" placeholder="工位 5 斷面積" step="0.01" min="0" class="station-area"></div>
+          </div>
+          <button type="button" class="ghost-btn" id="addStationBtn">＋ 增加工位</button>
+          <div class="inline-dia">
+            由直徑換算並填入空欄：
+            <input id="diaInput" type="number" placeholder="直徑" step="0.01" min="0">
+            <button type="button" class="ghost-btn" id="diaToAreaBtn" style="margin-top:0;">填入</button>
+          </div>
+        </div>
+      </div>
+      <div class="result" id="reductionResult" style="margin-top:0;">請輸入線徑與各工位面積</div>
+    </div>
+    <p class="note">減面率＝（前站面積 − 本站面積）÷ 前站面積 × 100%。單站建議不超過 30%（打頭可到 60%）。</p>
+  </section>
+
+  <section class="card">
+    <h2>
+      <span class="ico ico-teal" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="18" rx="3"/><path d="M8 9h8M8 15h8"/></svg></span>
+      墩粗比檢查
+    </h2>
+    <div class="row">
+      <div class="field">
+        <label>材料直徑（毫米）</label>
+        <input type="number" id="upsetDia" placeholder="線徑" step="0.1" min="0">
+      </div>
+      <div class="field">
+        <label>墩粗長度（毫米）</label>
+        <input type="number" id="upsetLen" placeholder="露出模具外長度" step="0.1" min="0">
+      </div>
+    </div>
+    <div class="result" id="upsetResult">請輸入直徑與墩粗長度</div>
+    <p class="note">墩粗比＝長度 ÷ 直徑。不大於 2.0 安全；2.0～2.5 需注意；大於 2.5 易挫曲。</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const root = document.documentElement;
+  const saved = localStorage.getItem('forge-theme');
+  if (saved === 'night' || saved === 'day') root.setAttribute('data-theme', saved);
+  $('themeBtn').addEventListener('click', function () {
+    const next = root.getAttribute('data-theme') === 'night' ? 'day' : 'night';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('forge-theme', next);
+  });
+
+  function getYieldStrength() {
+    const custom = parseFloat($('yieldCustom').value);
+    if (custom > 0) return custom;
+    const map = { lowC: 250, midC: 350, alloy: 500, stainless: 520, aluminum: 150, copper: 200 };
+    return map[$('material').value] || 350;
+  }
+
+  function getConstraintFactor() {
+    const map = { heading: 2.5, extrude_fwd: 3.5, extrude_bwd: 2.5, trimming: 1.0, coining: 5.0 };
+    return map[$('forgeType').value] || 2.5;
+  }
+
+  function areaFromDia() {
+    const dia = parseFloat($('diameter').value);
+    if (dia > 0) {
+      $('area').value = (Math.PI * Math.pow(dia / 2, 2)).toFixed(2);
+    }
+    calcTonnage();
+  }
+
+  function calcTonnage() {
+    const area = parseFloat($('area').value);
+    const res = $('tonnageResult');
+    if (!area || area <= 0) {
+      res.textContent = '請輸入面積（或直徑自動換算）';
+      return;
+    }
+    const Y = getYieldStrength();
+    const C = getConstraintFactor();
+    const S = parseFloat($('safetyFactor').value);
+    const forceN = C * Y * area * S;
+    const forceTon = forceN / 9800;
+    const forceKN = forceN / 1000;
+    const typeName = $('forgeType').selectedOptions[0].text;
+    let html =
+      '<strong>成形方式：</strong>' + typeName + '（拘束係數 ' + C + '）<br>' +
+      '<strong>降伏強度：</strong>' + Y + ' 百萬帕　｜　<strong>安全係數：</strong>' + S + '<br>' +
+      '<strong>投影面積：</strong>' + area.toFixed(2) + ' 平方毫米<hr>' +
+      '<span class="big">' + forceTon.toFixed(1) + ' 噸</span>　（' + forceKN.toFixed(1) + ' 千牛頓）';
+    if (forceTon > 500) html += '<br><span class="warn">噸位偏高，請確認模具與機台能力</span>';
+    res.innerHTML = html;
+  }
+
+  function calcReduction() {
+    const wireDia = parseFloat($('wireDia').value);
+    const areas = [...document.querySelectorAll('.station-area')]
+      .map((el) => parseFloat(el.value))
+      .filter((v) => !isNaN(v) && v > 0);
+    const res = $('reductionResult');
+    if (!wireDia || wireDia <= 0 || areas.length === 0) {
+      res.textContent = '請輸入線徑與至少一個工位面積';
+      return;
+    }
+    const wireArea = Math.PI * Math.pow(wireDia / 2, 2);
+    let html = '<strong>線材斷面積：</strong>' + wireArea.toFixed(2) + ' 平方毫米<br><br>';
+    let prevArea = wireArea;
+    areas.forEach((a, i) => {
+      const r = ((prevArea - a) / prevArea) * 100;
+      if (r < 0) {
+        html += '<span class="bad">工位 ' + (i + 1) + '：面積 ' + a.toFixed(2) + ' 大於前站 ' + prevArea.toFixed(2) + '，不合理</span><br>';
+      } else {
+        const cls = (i === 0 && r > 65) || (i > 0 && r > 35) ? 'warn' : 'ok';
+        html += '工位 ' + (i + 1) + '：' + prevArea.toFixed(2) + ' → ' + a.toFixed(2) + ' 平方毫米　<strong>減面率 <span class="' + cls + '">' + r.toFixed(1) + '%</span></strong>';
+        if ((i === 0 && r > 65) || (i > 0 && r > 35)) html += ' <span class="warn">超出建議值</span>';
+        html += '<br>';
+      }
+      prevArea = a;
+    });
+    const totalR = ((wireArea - areas[areas.length - 1]) / wireArea) * 100;
+    html += '<br><strong>總減面率：<span class="big">' + totalR.toFixed(1) + '%</span></strong>';
+    if (totalR > 80) html += '<br><span class="warn">總減面率偏高，考慮增加工位或中間退火</span>';
+    res.innerHTML = html;
+  }
+
+  function addStation() {
+    const container = $('stationInputs');
+    const n = container.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.style.marginTop = '6px';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.placeholder = '工位 ' + n + ' 斷面積';
+    input.step = '0.01';
+    input.min = '0';
+    input.className = 'station-area';
+    div.appendChild(input);
+    container.appendChild(div);
+    input.focus();
+  }
+
+  function diaToArea() {
+    const dia = parseFloat($('diaInput').value);
+    if (!(dia > 0)) return;
+    const area = (Math.PI * Math.pow(dia / 2, 2)).toFixed(2);
+    const empty = [...document.querySelectorAll('.station-area')].find((el) => !el.value);
+    if (empty) {
+      empty.value = area;
+    } else {
+      addStation();
+      const last = document.querySelectorAll('.station-area');
+      last[last.length - 1].value = area;
+    }
+    $('diaInput').value = '';
+    calcReduction();
+  }
+
+  function calcUpset() {
+    const d = parseFloat($('upsetDia').value);
+    const L = parseFloat($('upsetLen').value);
+    const res = $('upsetResult');
+    if (!d || !L || d <= 0 || L <= 0) {
+      res.textContent = '請輸入直徑與墩粗長度';
+      return;
+    }
+    const S = L / d;
+    let status, cls;
+    if (S <= 2.0) { status = '安全，無挫曲風險'; cls = 'ok'; }
+    else if (S <= 2.5) { status = '邊界值，需注意模具導向'; cls = 'warn'; }
+    else { status = '易挫曲，需分段墩粗或增加導套'; cls = 'bad'; }
+    let html =
+      '<strong>墩粗比＝長度／直徑＝' + L + '／' + d + '＝</strong><span class="big ' + cls + '">' + S.toFixed(2) + '</span><br>' +
+      '<span class="' + cls + '">' + status + '</span>';
+    if (S > 2.5) html += '<br><span class="warn">建議長度不大於 ' + (2.5 * d).toFixed(1) + ' 毫米，或分兩段墩粗</span>';
+    res.innerHTML = html;
+  }
+
+  $('forgeType').addEventListener('change', calcTonnage);
+  $('material').addEventListener('change', calcTonnage);
+  $('yieldCustom').addEventListener('input', calcTonnage);
+  $('area').addEventListener('input', calcTonnage);
+  $('diameter').addEventListener('input', areaFromDia);
+  $('safetyFactor').addEventListener('change', calcTonnage);
+  $('wireDia').addEventListener('input', calcReduction);
+  $('stationInputs').addEventListener('input', calcReduction);
+  $('addStationBtn').addEventListener('click', addStation);
+  $('diaToAreaBtn').addEventListener('click', diaToArea);
+  $('diaInput').addEventListener('change', diaToArea);
+  $('upsetDia').addEventListener('input', calcUpset);
+  $('upsetLen').addEventListener('input', calcUpset);
+})();
+</script>
+</body>
+</html>

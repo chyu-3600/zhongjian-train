@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ch計算機</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
+:root{
+  --bg:radial-gradient(ellipse at top,#1e1b4b 0%,#0f0a2e 55%,#05030f 100%);
+  --calc-bg:linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02));
+  --calc-border:rgba(255,255,255,0.12);
+  --title:#e0e7ff;
+  --screen-bg:rgba(0,0,0,0.45);
+  --screen-border:rgba(255,255,255,0.08);
+  --hist:#64748b;
+  --disp:#f8fafc;
+  --disp-shadow:rgba(167,139,250,0.35);
+  --key-bg:rgba(255,255,255,0.07);
+  --key-border:rgba(255,255,255,0.08);
+  --key-shadow:0 4px 12px rgba(0,0,0,0.3);
+  --key-num:linear-gradient(160deg,rgba(148,163,184,0.18),rgba(148,163,184,0.06));
+  --key-text:#f1f5f9;
+  --key-clear-text:#fda4af;
+  --key-del-text:#fdba74;
+  --key-op-bg:linear-gradient(160deg,rgba(34,211,238,0.22),rgba(34,211,238,0.08));
+  --key-op-text:#67e8f9;
+  --key-sci-bg:linear-gradient(160deg,rgba(167,139,250,0.22),rgba(167,139,250,0.07));
+  --key-sci-text:#c4b5fd;
+  --switch-bg:rgba(255,255,255,0.06);
+  --switch-border:rgba(255,255,255,0.1);
+  --switch-text:#94a3b8;
+  --eq-text:#0f0a2e;
+}
+body.light{
+  --bg:linear-gradient(160deg,#e0eafc 0%,#cfdef3 60%,#f5f3ff 100%);
+  --calc-bg:linear-gradient(160deg,rgba(255,255,255,0.95),rgba(255,255,255,0.85));
+  --calc-border:rgba(0,0,0,0.08);
+  --title:#4338ca;
+  --screen-bg:rgba(255,255,255,0.9);
+  --screen-border:rgba(0,0,0,0.08);
+  --hist:#94a3b8;
+  --disp:#1e1b4b;
+  --disp-shadow:rgba(99,102,241,0.25);
+  --key-bg:rgba(255,255,255,0.9);
+  --key-border:rgba(0,0,0,0.06);
+  --key-shadow:0 4px 12px rgba(80,90,160,0.12);
+  --key-num:linear-gradient(160deg,#ffffff,#eef2ff);
+  --key-text:#334155;
+  --key-clear-text:#e11d48;
+  --key-del-text:#c2410c;
+  --key-op-bg:linear-gradient(160deg,rgba(34,211,238,0.18),rgba(34,211,238,0.08));
+  --key-op-text:#0e7490;
+  --key-sci-bg:linear-gradient(160deg,rgba(167,139,250,0.18),rgba(167,139,250,0.08));
+  --key-sci-text:#6d28d9;
+  --switch-bg:rgba(255,255,255,0.7);
+  --switch-border:rgba(0,0,0,0.08);
+  --switch-text:#64748b;
+  --eq-text:#ffffff;
+}
+body{background:var(--bg);transition:background .4s;display:flex;justify-content:center;padding:16px}
+.calc{
+  width:100%;max-width:420px;
+  background:var(--calc-bg);
+  border:1px solid var(--calc-border);
+  border-radius:28px;padding:20px;
+  box-shadow:0 30px 80px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.1);
+  backdrop-filter:blur(20px);
+  transition:background .4s,border-color .4s;position:relative;
+}
+.theme-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--switch-bg);border:1px solid var(--switch-border);
+  color:var(--title);font-size:15px;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;z-index:5;
+}
+.theme-btn:hover{transform:scale(1.1)}
+.theme-row{display:flex;justify-content:flex-end;margin-bottom:8px}
+.top{display:flex;justify-content:flex-start;align-items:center;gap:6px;margin-bottom:14px}
+.title{display:flex;align-items:center;gap:8px;color:var(--title);font-size:15px;font-weight:900;letter-spacing:1px;transition:color .4s}
+.title .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#22d3ee);box-shadow:0 0 12px rgba(167,139,250,0.8)}
+.mode-switch{display:flex;background:var(--switch-bg);border:1px solid var(--switch-border);border-radius:999px;padding:3px;transition:background .4s}
+.mode-switch button{border:none;background:none;color:var(--switch-text);font-size:12px;font-weight:800;padding:7px 14px;border-radius:999px;cursor:pointer;transition:all .25s}
+.mode-switch button.active{background:linear-gradient(135deg,#a78bfa,#22d3ee);color:#0f0a2e;box-shadow:0 4px 14px rgba(167,139,250,0.5)}
+.screen{
+  background:var(--screen-bg);border:1px solid var(--screen-border);
+  border-radius:20px;padding:16px 18px;margin-bottom:16px;text-align:right;
+  min-height:112px;display:flex;flex-direction:column;justify-content:flex-end;
+  box-shadow:inset 0 4px 20px rgba(0,0,0,0.15);transition:background .4s;
+}
+.history{color:var(--hist);font-size:13px;min-height:20px;word-break:break-all;font-family:'Courier New',monospace}
+.display{
+  color:var(--disp);font-size:38px;font-weight:700;line-height:1.15;word-break:break-all;
+  text-shadow:0 0 24px var(--disp-shadow);font-family:'Courier New',monospace;transition:color .4s;
+}
+.display.small{font-size:24px}
+.keys{display:grid;gap:10px}
+.keys.basic{grid-template-columns:repeat(4,1fr)}
+.keys.sci{grid-template-columns:repeat(5,1fr);gap:8px}
+button.key{
+  border:1px solid var(--key-border);border-radius:16px;cursor:pointer;
+  font-size:19px;font-weight:800;color:var(--key-text);min-height:60px;padding:6px 2px;
+  background:var(--key-bg);box-shadow:var(--key-shadow),inset 0 1px 0 rgba(255,255,255,0.08);
+  transition:transform .08s,box-shadow .15s,filter .15s,background .4s;font-family:inherit;
+}
+button.key:active{transform:scale(0.94);filter:brightness(1.3)}
+.keys.sci button.key{min-height:52px}
+button.key.num{background:var(--key-num);font-size:28px}
+.keys.sci button.key.num{font-size:23px}
+button.key.op{background:var(--key-op-bg);color:var(--key-op-text);font-size:27px}
+button.key.sci-fn{background:var(--key-sci-bg);color:var(--key-sci-text);font-size:15.5px}
+button.key.clear{background:linear-gradient(160deg,rgba(244,63,94,0.35),rgba(244,63,94,0.12));color:var(--key-clear-text)}
+button.key.del{background:linear-gradient(160deg,rgba(251,146,60,0.3),rgba(251,146,60,0.1));color:var(--key-del-text)}
+button.key.equals{background:linear-gradient(160deg,#a78bfa,#22d3ee);color:var(--eq-text);font-size:30px}
+button.key.zero{grid-column:span 2}
+</style>
+</head>
+<body>
+<div class="calc">
+  <div class="theme-row">
+    <button class="theme-btn" id="themeBtn" title="切換日/夜模式">🌙</button>
+  </div>
+  <div class="top">
+    <div class="title"><span class="dot"></span>ch計算機</div>
+    <div class="mode-switch">
+      <button id="mBasic" class="active">一般</button>
+      <button id="mSci">科學</button>
+    </div>
+  </div>
+
+  <div class="screen">
+    <div class="history" id="history">&nbsp;</div>
+    <div class="display" id="display">0</div>
+  </div>
+
+  <div class="keys basic" id="keys"></div>
+</div>
+
+<script>
+let mode = 'basic';
+let expr = '';
+let lastAns = null;
+let deg = true;
+let justEval = false;
+
+const themeBtn = document.getElementById('themeBtn');
+const THEME_KEY = 'calc_ch_theme';
+function setTheme(light) {
+  document.body.classList.toggle('light', light);
+  themeBtn.textContent = light ? '☀️' : '🌙';
+  localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
+}
+setTheme(localStorage.getItem(THEME_KEY) === 'light');
+themeBtn.onclick = () => setTheme(!document.body.classList.contains('light'));
+
+const display = document.getElementById('display');
+const history = document.getElementById('history');
+const keysEl = document.getElementById('keys');
+
+const basicKeys = [
+  { t: 'C', c: 'clear' }, { t: '⌫', c: 'del' }, { t: '%', c: 'op' }, { t: '÷', c: 'op' },
+  { t: '7', c: 'num' }, { t: '8', c: 'num' }, { t: '9', c: 'num' }, { t: '×', c: 'op' },
+  { t: '4', c: 'num' }, { t: '5', c: 'num' }, { t: '6', c: 'num' }, { t: '−', c: 'op' },
+  { t: '1', c: 'num' }, { t: '2', c: 'num' }, { t: '3', c: 'num' }, { t: '+', c: 'op' },
+  { t: '±', c: 'fn' }, { t: '0', c: 'num', zero: true }, { t: '.', c: 'num' }, { t: '=', c: 'equals' },
+];
+
+const sciKeys = [
+  { t: 'C', c: 'clear' }, { t: '⌫', c: 'del' }, { t: '(', c: 'fn' }, { t: ')', c: 'fn' }, { t: '=', c: 'equals' },
+  { t: 'sin', c: 'sci-fn' }, { t: 'cos', c: 'sci-fn' }, { t: 'tan', c: 'sci-fn' }, { t: 'π', c: 'fn' }, { t: '÷', c: 'op' },
+  { t: 'asin', c: 'sci-fn' }, { t: 'acos', c: 'sci-fn' }, { t: 'atan', c: 'sci-fn' }, { t: 'e', c: 'fn' }, { t: '×', c: 'op' },
+  { t: 'log', c: 'sci-fn' }, { t: 'ln', c: 'sci-fn' }, { t: '√', c: 'sci-fn' }, { t: 'x²', c: 'sci-fn' }, { t: '−', c: 'op' },
+  { t: 'xʸ', c: 'sci-fn' }, { t: 'x³', c: 'sci-fn' }, { t: '!', c: 'sci-fn' }, { t: '1/x', c: 'sci-fn' }, { t: '+', c: 'op' },
+  { t: '7', c: 'num' }, { t: '8', c: 'num' }, { t: '9', c: 'num' }, { t: '%', c: 'op' }, { t: '±', c: 'fn' },
+  { t: '4', c: 'num' }, { t: '5', c: 'num' }, { t: '6', c: 'num' }, { t: 'Ans', c: 'sci-fn' }, { t: '°|rad', c: 'sci-fn' },
+  { t: '1', c: 'num' }, { t: '2', c: 'num' }, { t: '3', c: 'num' }, { t: '.', c: 'num' }, { t: '0', c: 'num' },
+];
+
+function renderKeys() {
+  const list = mode === 'basic' ? basicKeys : sciKeys;
+  keysEl.className = 'keys ' + (mode === 'basic' ? 'basic' : 'sci');
+  keysEl.innerHTML = list.map(k => `<button class="key ${k.c}${k.zero ? ' zero' : ''}" data-t="${k.t}">${k.t}</button>`).join('');
+}
+
+/* ---------------- 表達式解析（shunting：遞迴下降） ---------------- */
+const FUNCS = ['asin', 'acos', 'atan', 'sin', 'cos', 'tan', 'log', 'ln', '√'];
+const IDENTS = ['Ans', 'π', 'e'];
+
+function tokenize(s) {
+  const out = [];
+  let i = 0;
+  while (i < s.length) {
+    const ch = s[i];
+    if (ch === ' ') { i++; continue; }
+    if (/[0-9.]/.test(ch)) {
+      let j = i;
+      while (j < s.length && /[0-9.]/.test(s[j])) j++;
+      const text = s.slice(i, j);
+      if ((text.match(/\./g) || []).length > 1) throw Error('數字格式錯誤');
+      out.push({ k: 'n', v: parseFloat(text) });
+      i = j;
+      continue;
+    }
+    if (/[a-zA-Z√π]/.test(ch)) {
+      let j = i;
+      while (j < s.length && /[a-zA-Z√π]/.test(s[j])) j++;
+      const word = s.slice(i, j);
+      if (FUNCS.includes(word) || IDENTS.includes(word)) out.push({ k: word === '√' ? '√' : word, v: word });
+      else throw Error('無法辨識：' + word);
+      i = j;
+      continue;
+    }
+    if ('+−×÷^()!%'.includes(ch)) { out.push({ k: ch }); i++; continue; }
+    if (ch === '-') { out.push({ k: '−' }); i++; continue; }
+    if (ch === '*') { out.push({ k: '×' }); i++; continue; }
+    if (ch === '/') { out.push({ k: '÷' }); i++; continue; }
+    throw Error('無法辨識：' + ch);
+  }
+  return out;
+}
+
+function parse(s) {
+  const ts = tokenize(s);
+  let p = 0;
+  const peek = () => ts[p];
+  const eat = k => { if (!peek() || peek().k !== k) throw Error('運算式不完整'); p++; };
+  const startsValue = t => t && (t.k === 'n' || t.k === '(' || t.k === 'π' || t.k === 'e' || t.k === 'Ans' || t.k === '√' || FUNCS.includes(t.k));
+
+  function exprNode() {
+    let v = termNode();
+    while (peek() && (peek().k === '+' || peek().k === '−')) {
+      const op = peek().k; p++;
+      const r = termNode();
+      v = op === '+' ? v + r : v - r;
+    }
+    return v;
+  }
+  function termNode() {
+    let v = unaryNode();
+    for (;;) {
+      const t = peek();
+      if (t && (t.k === '×' || t.k === '÷')) {
+        p++;
+        const r = unaryNode();
+        if (t.k === '÷' && r === 0) throw Error('不能除以 0');
+        v = t.k === '×' ? v * r : v / r;
+      } else if (startsValue(t)) {
+        v *= unaryNode();
+      } else break;
+    }
+    return v;
+  }
+  function unaryNode() {
+    const t = peek();
+    if (t && t.k === '−') { p++; return -unaryNode(); }
+    if (t && t.k === '+') { p++; return unaryNode(); }
+    return powerNode();
+  }
+  function powerNode() {
+    const base = postNode();
+    if (peek() && peek().k === '^') {
+      p++;
+      return Math.pow(base, unaryNode());
+    }
+    return base;
+  }
+  function postNode() {
+    let v = primaryNode();
+    while (peek() && (peek().k === '!' || peek().k === '%')) {
+      if (peek().k === '%') { p++; v = v / 100; }
+      else { p++; v = fact(v); }
+    }
+    return v;
+  }
+  function groupOrOperand() {
+    if (peek() && peek().k === '(') { p++; const v = exprNode(); eat(')'); return v; }
+    return postNode();
+  }
+  function primaryNode() {
+    const t = peek();
+    if (!t) throw Error('運算式不完整');
+    if (t.k === 'n') { p++; return t.v; }
+    if (t.k === '(') { p++; const v = exprNode(); eat(')'); return v; }
+    if (t.k === 'π') { p++; return Math.PI; }
+    if (t.k === 'e') { p++; return Math.E; }
+    if (t.k === 'Ans') { p++; if (lastAns == null) throw Error('尚無上次答案'); return lastAns; }
+    if (!FUNCS.includes(t.k)) throw Error('運算式錯誤');
+    p++;
+    const r = groupOrOperand();
+    switch (t.k) {
+      case 'sin': return Math.sin(toRad(r));
+      case 'cos': return Math.cos(toRad(r));
+      case 'tan': return Math.tan(toRad(r));
+      case 'log': if (r <= 0) throw Error('log 需正值'); return Math.log10(r);
+      case 'ln': if (r <= 0) throw Error('ln 需正值'); return Math.log(r);
+      case '√': if (r < 0) throw Error('負數不能開根號'); return Math.sqrt(r);
+      case 'asin': return fromRad(Math.asin(checkRange(r, 'asin')));
+      case 'acos': return fromRad(Math.acos(checkRange(r, 'acos')));
+      case 'atan': return fromRad(Math.atan(r));
+    }
+  }
+  return exprNode();
+}
+
+const toRad = x => deg ? x * Math.PI / 180 : x;
+const fromRad = x => deg ? x * 180 / Math.PI : x;
+const checkRange = (x, name) => { if (x < -1 || x > 1) throw Error(name + ' 範圍 −1～1'); return x; };
+function fact(x) {
+  if (x < 0 || !Number.isInteger(x)) throw Error('階乘需非負整數');
+  if (x > 170) throw Error('階乘數值過大');
+  let r = 1;
+  for (let i = 2; i <= x; i++) r *= i;
+  return r;
+}
+
+function fmt(n) {
+  if (typeof n !== 'number' || !isFinite(n)) return null;
+  if (n !== 0 && (Math.abs(n) >= 1e12 || Math.abs(n) < 1e-9)) return n.toExponential(6).replace(/\.?0+e/, 'e');
+  return String(parseFloat(n.toPrecision(12)));
+}
+
+function autoClose(s) {
+  const open = (s.match(/\(/g) || []).length, close = (s.match(/\)/g) || []).length;
+  return s + ')'.repeat(Math.max(0, open - close));
+}
+
+/* ---------------- 輸入處理 ---------------- */
+const OPS = ['+', '−', '×', '÷'];
+
+function show() {
+  display.textContent = expr || '0';
+  display.classList.toggle('small', expr.length > 12);
+  const preview = expr && /[+−×÷^!%]|[(]/.test(autoClose(expr)) ? safeEval(autoClose(expr)) : null;
+  if (!justEval && preview != null && preview !== expr) history.textContent = '= ' + preview;
+  else if (!expr) history.innerHTML = '&nbsp;';
+}
+
+function safeEval(s) {
+  try { const r = parse(s); return fmt(r) === null ? null : fmt(r); } catch { return null; }
+}
+
+function append(tok) {
+  if (justEval) { expr = ''; justEval = false; }
+  expr = (expr + tok).slice(0, 60);
+}
+
+function handle(t) {
+  if (/^[0-9]$/.test(t)) {
+    if (justEval) { expr = ''; justEval = false; }
+    if (expr === '0') expr = t;
+    else append(t);
+    show(); return;
+  }
+  if (t === '.') {
+    const tail = expr.match(/[\d.]*$/)[0];
+    if (justEval) { expr = ''; justEval = false; }
+    if (tail.includes('.')) { show(); return; }
+    append(tail.length ? '.' : '0.');
+    show(); return;
+  }
+  if (t === 'π' || t === 'e' || t === 'Ans') { append(t); show(); return; }
+  if (OPS.includes(t)) {
+    if (justEval) justEval = false;
+    if (!expr) { if (t !== '−') { show(); return; } expr = ''; }
+    else if (OPS.includes(expr.slice(-1))) expr = expr.slice(0, -1) + t;
+    else expr += t;
+    show(); return;
+  }
+  if (t === '(') { append('('); show(); return; }
+  if (t === ')') {
+    const open = (expr.match(/\(/g) || []).length, close = (expr.match(/\)/g) || []).length;
+    if (open > close && expr && !OPS.includes(expr.slice(-1))) expr += ')';
+    show(); return;
+  }
+  if (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'log', 'ln'].includes(t)) {
+    if (justEval) { expr = ''; justEval = false; }
+    expr += t + '(';
+    show(); return;
+  }
+  if (t === '√') { if (justEval) { expr = ''; justEval = false; } expr += '√('; show(); return; }
+  if (t === 'x²') { finishPower('^2'); return; }
+  if (t === 'x³') { finishPower('^3'); return; }
+  if (t === 'xʸ') { if (expr && !OPS.includes(expr.slice(-1))) expr += '^'; show(); return; }
+  if (t === '1/x') { expr = expr ? `1÷(${autoClose(expr)})` : ''; justEval = false; show(); return; }
+  if (t === '!') { if (expr) expr += '!'; show(); return; }
+  if (t === '%') { if (expr) expr += '%'; show(); return; }
+  if (t === '±') { toggleSign(); show(); return; }
+  if (t === '°|rad') { deg = !deg; toastDeg(); show(); return; }
+  if (t === 'C') { expr = ''; justEval = false; history.innerHTML = '&nbsp;'; display.textContent = '0'; display.classList.remove('small'); return; }
+  if (t === '⌫') {
+    if (justEval) { expr = ''; justEval = false; }
+    else expr = backspace(expr);
+    show(); return;
+  }
+  if (t === '=') { evaluate(); return; }
+}
+
+function finishPower(suffix) {
+  if (expr) expr += suffix;
+  justEval = false;
+  show();
+}
+
+function toggleSign() {
+  const m = expr.match(/^(.*?)(\d*\.?\d+)$/);
+  if (!m) {
+    if (/[+−×÷^(]$/.test(expr) || !expr) expr += '−';
+    else if (!expr.endsWith(')')) expr = '−' + expr;
+    justEval = false;
+    return;
+  }
+  const [, pre, num] = m;
+  expr = pre.endsWith('−') && (pre.length === 1 || !/[0-9.)!%]/.test(pre[pre.length - 2]))
+    ? pre.slice(0, -1) + num
+    : pre + '−' + num;
+  justEval = false;
+}
+
+function backspace(s) {
+  for (const f of FUNCS) { if (s.endsWith(f + '(')) return s.slice(0, -f.length - 1); }
+  for (const id of ['Ans']) { if (s.endsWith(id)) return s.slice(0, -id.length); }
+  return s.slice(0, -1);
+}
+
+function evaluate() {
+  if (!expr) return;
+  const src = autoClose(expr);
+  const full = src + ' =';
+  try {
+    const r = parse(src);
+    const text = fmt(r);
+    if (text === null) throw Error('數值超出範圍');
+    lastAns = r;
+    expr = text;
+    justEval = true;
+    history.textContent = full;
+    display.textContent = text;
+    display.classList.toggle('small', text.length > 12);
+  } catch (err) {
+    history.textContent = err.message || '運算錯誤';
+    display.textContent = '錯誤';
+  }
+}
+
+function toastDeg() {
+  history.textContent = deg ? '角度模式：度（°）' : '角度模式：弧度（rad）';
+}
+
+keysEl.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) handle(b.dataset.t);
+});
+
+document.getElementById('mBasic').onclick = () => { mode = 'basic'; swapMode(); };
+document.getElementById('mSci').onclick = () => { mode = 'sci'; swapMode(); };
+function swapMode() {
+  document.getElementById('mBasic').classList.toggle('active', mode === 'basic');
+  document.getElementById('mSci').classList.toggle('active', mode === 'sci');
+  renderKeys();
+  show();
+}
+
+document.addEventListener('keydown', e => {
+  const k = e.key;
+  const map = { '*': '×', '/': '÷', '-': '−', '+': '+', '.': '.', '(': '(', ')': ')' };
+  if (/^[0-9]$/.test(k)) handle(k);
+  else if (map[k]) handle(map[k]);
+  else if (k === '^') handle('xʸ');
+  else if (k === '!') handle('!');
+  else if (k === '%') handle('%');
+  else if (k === 'Enter' || k === '=') { e.preventDefault(); handle('='); }
+  else if (k === 'Backspace') handle('⌫');
+  else if (k === 'Escape' || k === 'c') handle('C');
+});
+
+renderKeys();
+show();
+</script>
+</body>
+</html>

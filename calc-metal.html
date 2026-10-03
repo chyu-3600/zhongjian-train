@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="cache-control" content="no-cache, no-store, must-revalidate">
+<title>金屬重量計算器</title>
+<style>
+  :root {
+    --bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --card-bg: rgba(255,255,255,0.95);
+    --text: #1a1a2e;
+    --text-muted: #6c757d;
+    --border: #dee2e6;
+    --accent: #4a90d9;
+    --accent-light: #e3f2fd;
+    --accent-dark: #1976d2;
+    --danger: #e74c3c;
+    --input-bg: #fff;
+    --shadow: 0 8px 32px rgba(0,0,0,0.1);
+    --seg1: #e3f2fd; --seg2: #fff3e0; --seg3: #e8f5e9; --seg4: #fce4ec; --seg5: #f3e5f5; --seg6: #e0f7fa;
+  }
+  [data-theme="dark"] {
+    --bg: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    --card-bg: rgba(40,40,60,0.9);
+    --text: #e0e0e0;
+    --text-muted: #999;
+    --border: #444;
+    --accent: #64b5f6;
+    --accent-light: #1565c0;
+    --accent-dark: #90caf9;
+    --danger: #ef5350;
+    --input-bg: #333;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --seg1: #1a237e; --seg2: #4e342e; --seg3: #1b5e20; --seg4: #4a148c; --seg5: #311b92; --seg6: #006064;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--text);
+    padding: 12px;
+    transition: background 0.3s, color 0.3s;
+  }
+  .container { max-width: 700px; margin: 0 auto; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 1.4em; display: flex; align-items: center; gap: 8px; }
+  .theme-btn {
+    background: var(--card-bg); border: 1px solid var(--border);
+    width: 40px; height: 40px; border-radius: 50%; font-size: 18px;
+    cursor: pointer; box-shadow: var(--shadow); transition: all 0.2s;
+  }
+  .card {
+    background: var(--card-bg); border-radius: 16px; padding: 16px;
+    margin-bottom: 12px; box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+  }
+  .card-title {
+    font-size: 0.8em; color: var(--text-muted); margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+  }
+  .material-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .material-btn {
+    padding: 10px 6px; border: 2px solid var(--border); border-radius: 10px;
+    background: var(--input-bg); color: var(--text); cursor: pointer;
+    font-size: 0.9em; transition: all 0.2s; text-align: center;
+  }
+  .material-btn .density { font-size: 0.72em; color: var(--text-muted); display: block; margin-top: 2px; }
+  .material-btn.active {
+    border-color: var(--accent); background: var(--accent-light);
+    color: var(--accent-dark); font-weight: 600;
+  }
+  .preview-wrap {
+    background: var(--input-bg); border-radius: 12px; padding: 8px;
+    border: 1px solid var(--border);
+  }
+  .preview-svg { width: 100%; height: 220px; display: block; }
+  .segment-row {
+    display: flex; gap: 6px; align-items: center; margin-bottom: 8px;
+  }
+  .seg-label {
+    width: 32px; font-weight: 700; color: var(--accent-dark);
+    font-size: 0.85em; text-align: center;
+  }
+  .input-group { flex: 1; display: flex; align-items: center; gap: 2px; }
+  .input-group .ico { font-size: 0.85em; color: var(--text-muted); width: 18px; text-align: center; }
+  .input-group input {
+    flex: 1; min-width: 0; padding: 8px 6px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--input-bg); color: var(--text);
+    font-size: 1em; width: 100%;
+  }
+  .input-group input:focus { outline: none; border-color: var(--accent); }
+  .input-group .unit { font-size: 0.75em; color: var(--text-muted); width: 22px; }
+  .del-btn {
+    background: transparent; border: none; color: var(--danger);
+    font-size: 1.2em; cursor: pointer; padding: 4px 6px; border-radius: 6px;
+  }
+  .del-btn:hover { background: rgba(231,76,60,0.1); }
+  .add-btn {
+    width: 100%; padding: 10px; border: 2px dashed var(--border);
+    border-radius: 10px; background: transparent; color: var(--text-muted);
+    cursor: pointer; font-size: 0.9em; margin-top: 4px; transition: all 0.2s;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .result-box { text-align: center; padding: 4px; }
+  .result-big {
+    font-size: 2.2em; font-weight: 800; color: var(--accent-dark);
+    letter-spacing: 1px;
+  }
+  .result-label { font-size: 0.8em; color: var(--text-muted); margin-bottom: 8px; }
+  .result-sub {
+    display: flex; justify-content: center; gap: 24px;
+    font-size: 0.85em; color: var(--text-muted); margin-bottom: 12px;
+  }
+  .result-sub span b { color: var(--text); }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+  .detail-table th, .detail-table td {
+    padding: 6px 4px; border-bottom: 1px solid var(--border); text-align: center;
+  }
+  .detail-table th { color: var(--text-muted); font-weight: 500; }
+  .detail-table tr.total { font-weight: 700; color: var(--accent-dark); }
+  .note { font-size: 0.75em; color: var(--text-muted); margin-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🔩 金屬重量計算器</h1>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+  </header>
+
+  <div class="card">
+    <div class="card-title">材質選擇</div>
+    <div class="material-grid" id="materialGrid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">預覽圖形（階梯軸側視圖）</div>
+    <div class="preview-wrap">
+      <svg class="preview-svg" id="preview" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="arrL" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <path d="M8,0 L0,4 L8,8" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+          </marker>
+          <marker id="arrR" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">段落尺寸（直徑 ⌀ × 長度 L，單位 mm）</div>
+    <div id="segments"></div>
+    <button class="add-btn" onclick="addSegment()">+ 新增段落</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">計算結果</div>
+    <div class="result-box">
+      <div class="result-big" id="totalWeight">0.000</div>
+      <div class="result-label">總重量 (g)</div>
+      <div class="result-sub">
+        <span>總體積 <b id="totalVol">0</b> cm³</span>
+        <span>材質 <b id="matName">碳鋼</b></span>
+      </div>
+    </div>
+    <table class="detail-table" id="detailTable"></table>
+    <div class="note">公式：重量(g) = π × (⌀/2)² × L × 密度 ÷ 1,000</div>
+  </div>
+</div>
+
+<script>
+  const materials = {
+    carbon:   { name: '碳鋼',     density: 7.85 },
+    tungsten: { name: '鎢鋼',     density: 14.5 },
+    stainless:{ name: '不鏽鋼',   density: 7.93 },
+    aluminum: { name: '鋁合金',   density: 2.70 },
+    copper:   { name: '銅',       density: 8.96 },
+    brass:    { name: '黃銅',     density: 8.50 }
+  };
+  let currentMaterial = 'carbon';
+  let segments = [
+    { diameter: 50, length: 100 },
+    { diameter: 30, length: 80 }
+  ];
+
+  function init() {
+    const theme = localStorage.getItem('round-theme') || 'light';
+    document.body.setAttribute('data-theme', theme);
+    document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀' : '🌙';
+    // 恢復上次輸入
+    const saved = localStorage.getItem('round-segments');
+    if (saved) { try { segments = JSON.parse(saved); } catch(e){} }
+    const savedMat = localStorage.getItem('round-material');
+    if (savedMat && materials[savedMat]) currentMaterial = savedMat;
+    renderMaterials();
+    renderSegments();
+    calculate();
+  }
+
+  function toggleTheme() {
+    const cur = document.body.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    document.getElementById('themeBtn').textContent = next === 'dark' ? '☀' : '🌙';
+    localStorage.setItem('round-theme', next);
+    setTimeout(renderPreview, 50);
+  }
+
+  function renderMaterials() {
+    const grid = document.getElementById('materialGrid');
+    grid.innerHTML = Object.entries(materials).map(([key, m]) =>
+      `<button class="material-btn ${key === currentMaterial ? 'active' : ''}" onclick="selectMaterial('${key}')">
+        ${m.name}<span class="density">${m.density} g/cm³</span>
+      </button>`
+    ).join('');
+  }
+
+  function selectMaterial(key) {
+    currentMaterial = key;
+    localStorage.setItem('round-material', key);
+    renderMaterials();
+    calculate();
+  }
+
+  function renderSegments() {
+    const div = document.getElementById('segments');
+    div.innerHTML = segments.map((s, i) => `
+      <div class="segment-row">
+        <span class="seg-label">${i+1}</span>
+        <div class="input-group">
+          <span class="ico">⌀</span>
+          <input type="number" value="${s.diameter}" min="0" step="0.1"
+            oninput="updateSegment(${i}, 'diameter', this.value)" placeholder="直徑">
+          <span class="unit">mm</span>
+        </div>
+        <div class="input-group">
+          <span class="ico">L</span>
+          <input type="number" value="${s.length}" min="0" step="0.1"
+            oninput="updateSegment(${i}, 'length', this.value)" placeholder="長度">
+          <span class="unit">mm</span>
+        </div>
+        ${segments.length > 1 ? `<button class="del-btn" onclick="delSegment(${i})">✕</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function updateSegment(i, field, val) {
+    segments[i][field] = parseFloat(val) || 0;
+    localStorage.setItem('round-segments', JSON.stringify(segments));
+    calculate();
+  }
+
+  function addSegment() {
+    const last = segments[segments.length-1];
+    segments.push({ diameter: last ? last.diameter : 20, length: 50 });
+    localStorage.setItem('round-segments', JSON.stringify(segments));
+    renderSegments();
+    calculate();
+  }
+
+  function delSegment(i) {
+    segments.splice(i, 1);
+    localStorage.setItem('round-segments', JSON.stringify(segments));
+    renderSegments();
+    calculate();
+  }
+
+  function calculate() {
+    const density = materials[currentMaterial].density;
+    let totalVolume = 0;
+    const details = segments.map((s, i) => {
+      const r = s.diameter / 2;
+      const v_mm3 = Math.PI * r * r * s.length;
+      const v_cm3 = v_mm3 / 1000;
+      const w_g   = v_cm3 * density;
+      totalVolume += v_mm3;
+      return { idx: i+1, d: s.diameter, l: s.length, v: v_cm3, w: w_g };
+    });
+    const totalVol_cm3 = totalVolume / 1000;
+    const totalW_g = totalVol_cm3 * density;
+
+    document.getElementById('totalWeight').textContent = totalW_g.toFixed(3);
+    document.getElementById('totalVol').textContent = totalVol_cm3.toFixed(2);
+    document.getElementById('matName').textContent = materials[currentMaterial].name;
+
+    const tbl = document.getElementById('detailTable');
+    tbl.innerHTML = `
+      <tr><th>#</th><th>⌀ mm</th><th>L mm</th><th>體積 cm³</th><th>重量 g</th></tr>
+      ${details.map(d => `<tr><td>${d.idx}</td><td>${d.d}</td><td>${d.l}</td><td>${d.v.toFixed(2)}</td><td>${d.w.toFixed(3)}</td></tr>`).join('')}
+      <tr class="total"><td colspan="3">合計</td><td>${totalVol_cm3.toFixed(2)}</td><td>${totalW_g.toFixed(3)}</td></tr>
+    `;
+    renderPreview();
+  }
+
+  function renderPreview() {
+    const svg = document.getElementById('preview');
+    const W = 600, H = 220;
+    const maxD = Math.max(...segments.map(s => s.diameter), 1);
+    const totalL = segments.reduce((s, x) => s + x.length, 0) || 1;
+    const padX = 50, padTop = 40, padBot = 70;
+    const availW = W - padX * 2;
+    const availH = H - padTop - padBot;
+    const scaleX = availW / totalL;
+    const scaleY = availH / maxD;
+    const scale = Math.min(scaleX, scaleY);
+    const cy = padTop + availH / 2;
+    const startX = (W - totalL * scale) / 2;
+    const segColors = ['var(--seg1)','var(--seg2)','var(--seg3)','var(--seg4)','var(--seg5)','var(--seg6)'];
+
+    let parts = '';
+    // 中心線
+    parts += `<line x1="20" y1="${cy}" x2="${W-20}" y2="${cy}" stroke="var(--text-muted)" stroke-dasharray="12,3,3,3" stroke-width="1"/>`;
+
+    // 各段
+    let x = startX;
+    segments.forEach((seg, i) => {
+      const segW = seg.length * scale;
+      const segH = seg.diameter * scale;
+      const y = cy - segH / 2;
+      const fill = segColors[i % segColors.length];
+
+      // 段落本體
+      parts += `<rect x="${x}" y="${y}" width="${segW}" height="${segH}" fill="${fill}" stroke="var(--accent)" stroke-width="2" rx="2"/>`;
+      // 剖面線（簡易）
+      if (segW > 20 && segH > 15) {
+        const step = 8;
+        for (let lx = x; lx < x + segW; lx += step) {
+          parts += `<line x1="${lx}" y1="${y}" x2="${lx+segH}" y2="${y+segH}" stroke="var(--accent)" stroke-width="0.4" opacity="0.25"/>`;
+        }
+      }
+
+      // 直徑標註（上方）
+      const dimY = y - 12;
+      parts += `<line x1="${x+segW/2}" y1="${y}" x2="${x+segW/2}" y2="${dimY}" stroke="var(--text-muted)" stroke-width="0.5"/>`;
+      parts += `<line x1="${x+segW/2}" y1="${y}" x2="${x+segW/2}" y2="${dimY-8}" stroke="var(--text-muted)" stroke-width="0.5"/>`;
+      parts += `<text x="${x+segW/2}" y="${dimY-3}" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="700">⌀${seg.diameter}</text>`;
+
+      // 長度標註（下方）
+      const lenY = cy + segH/2 + 14;
+      parts += `<line x1="${x}" y1="${cy+segH/2}" x2="${x}" y2="${lenY}" stroke="var(--text-muted)" stroke-width="0.5"/>`;
+      parts += `<line x1="${x+segW}" y1="${cy+segH/2}" x2="${x+segW}" y2="${lenY}" stroke="var(--text-muted)" stroke-width="0.5"/>`;
+      parts += `<line x1="${x}" y1="${lenY-4}" x2="${x+segW}" y2="${lenY-4}" stroke="var(--text-muted)" stroke-width="0.8" marker-start="url(#arrR)" marker-end="url(#arrR)"/>`;
+      parts += `<text x="${x+segW/2}" y="${lenY+12}" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600">${seg.length}</text>`;
+
+      x += segW;
+    });
+
+    // 總長標註
+    const totalY = cy + maxD * scale / 2 + 42;
+    parts += `<line x1="${startX}" y1="${totalY-6}" x2="${startX}" y2="${totalY+2}" stroke="var(--accent-dark)" stroke-width="0.8"/>`;
+    parts += `<line x1="${startX+totalL*scale}" y1="${totalY-6}" x2="${startX+totalL*scale}" y2="${totalY+2}" stroke="var(--accent-dark)" stroke-width="0.8"/>`;
+    parts += `<line x1="${startX}" y1="${totalY-2}" x2="${startX+totalL*scale}" y2="${totalY-2}" stroke="var(--accent-dark)" stroke-width="1" marker-start="url(#arrL)" marker-end="url(#arrR)"/>`;
+    parts += `<text x="${startX + totalL*scale/2}" y="${totalY+14}" text-anchor="middle" fill="var(--accent-dark)" font-size="12" font-weight="800">總長 ${totalL} mm</text>`;
+
+    // 保留 defs，替換其他內容
+    const defs = svg.querySelector('defs').outerHTML;
+    svg.innerHTML = defs + parts;
+  }
+
+  init();
+</script>
+</body>
+</html>
