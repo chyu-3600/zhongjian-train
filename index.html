@@ -356,6 +356,7 @@ const CONFIG = {
 const LS = { sess: 'tr_sess', coursesCache: 'tr_courses_cache', recordsCache: 'tr_records_cache', favs: 'tr_favs' };
 const CATS = ['安全訓練', '機台操作', '冷鍛工藝', '品質管理', '知識庫', '其他'];
 const CAT_ICO = { '安全訓練': 'icons/safety.png', '機台操作': 'icons/machine.png', '冷鍛工藝': 'icons/forge.png', '品質管理': 'icons/quality.png', '知識庫': 'icons/knowledge.png', '其他': 'icons/other.png' };
+const CAT_EMO = { '安全訓練': '🦺', '機台操作': '🔧', '冷鍛工藝': '⚙️', '品質管理': '✅', '知識庫': '📖', '其他': '📚' };
 const CAT_CLS = { '安全訓練': 'g-red', '機台操作': 'g-cyan', '冷鍛工藝': 'g-orange', '品質管理': 'g-green', '知識庫': 'g-teal', '其他': 'g-pink' };
 const CAT_GRID = [{ name: '全部', ico: 'icons/all.png', cls: 'g-blue' },
   ...CATS.map(c => ({ name: c, ico: CAT_ICO[c], cls: CAT_CLS[c],
@@ -613,7 +614,6 @@ function courseCard(c) {
   return `
     <div class="course" onclick="openCourse(${c.id})">
       <button class="fav ${isFav(c.id) ? 'on' : ''}" onclick="toggleFav(${c.id},event)">${isFav(c.id) ? '★' : '☆'}</button>
-      <div class="course-thumb">${CAT_ICO[c.category] || '📚'}</div>
       <div class="course-body">
         <div class="course-title">${esc(c.title)}</div>
         <div class="course-meta"><span>${esc(c.category || '其他')}</span></div>
@@ -675,7 +675,7 @@ function renderManage() {
   $('whoami').textContent = isAdmin() ? '管理員（全部權限）' : '員工（唯讀）';
   $('manageList').innerHTML = courses.length ? courses.map(c => `
     <div class="manage-item">
-      <span class="t">${CAT_ICO[c.category] || '📚'} ${esc(c.title)}</span>
+      <span class="t">${CAT_EMO[c.category] || '📚'} ${esc(c.title)}</span>
       <span class="c">${esc(c.category || '')}</span>
       <button class="mini" onclick="openCourseForm(${c.id})">編輯</button>
       <button class="mini del" onclick="delCourse(${c.id})">刪除</button>
@@ -690,7 +690,7 @@ function openCourse(id) {
   const c = courses.find(x => x.id == id); if (!c) return;
   const yid = ytId(c.youtube);
   showModal(`
-    <h3>${CAT_ICO[c.category] || '📚'} ${esc(c.title)}</h3>
+    <h3>${CAT_EMO[c.category] || '📚'} ${esc(c.title)}</h3>
     ${yid ? `<div class="video-box"><iframe src="https://www.youtube.com/embed/${yid}" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : ''}
     ${c.file_url ? `<a class="pdf-link" href="${esc(c.file_url)}" target="_blank" rel="noopener">📄 下載/開啟課程 PDF</a>` : ''}
     <div class="course-meta" style="margin-bottom:8px"><span>${esc(c.category || '')}</span></div>
