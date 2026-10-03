@@ -21,6 +21,9 @@
           border:2px solid #93c5fd; border-radius:10px; font-size:14px; cursor:grab; user-select:none;
           box-shadow:0 1px 3px rgba(0,0,0,.08); white-space:pre-wrap; word-break:break-word; }
   .node.sel { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.25); }
+  #bgimg { position:absolute; left:0; top:0; max-width:3800px; pointer-events:none;
+           border:1px dashed #94a3b8; border-radius:6px; box-shadow:0 1px 6px rgba(0,0,0,.12); background:#fff; }
+  #modeTag { display:none; font-size:12px; color:#fff; background:#0ea5e9; padding:3px 10px; border-radius:999px; }
 </style>
 </head>
 <body>
@@ -29,11 +32,16 @@
   <h1>🧠 思維導圖</h1>
   <button class="btn primary" onclick="addChild()">＋ 新增子節點</button>
   <button class="btn" onclick="renameSel()">✎ 重新命名</button>
+  <button class="btn" onclick="pickImg()" style="border-color:#0ea5e9;color:#0369a1">🖼 上傳圖片</button>
+  <button class="btn" onclick="clearImg()" id="btnClearImg" style="display:none">✖ 移除圖片</button>
+  <span id="modeTag">圖片模式</span>
   <button class="btn" onclick="resetMap()">↺ 重設</button>
   <button class="btn" onclick="exportMap()">⬇ 匯出大綱</button>
-  <span class="hint">先點選一個節點，再按「新增子節點」；雙擊節點可改名；拖曳可移動。</span>
+  <input type="file" id="fileImg" accept="image/*" style="display:none">
+  <span class="hint">選節點→新增子節點；雙擊改名、拖曳移動。上傳圖片後成為底圖，可在圖上圈節點標註。</span>
 </div>
 <div id="map">
+  <img id="bgimg" alt="">
   <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
 </div>
 <script>
@@ -44,8 +52,11 @@ window.onerror = function(m, s, l, c) {
 };
 
 var KEY = 'tr_mindmap_v1';
+var IMGKEY = 'tr_mindmap_img_v1';
 var map = document.getElementById('map');
 var svg = document.getElementById('svg');
+var bgimg = document.getElementById('bgimg');
+var fileImg = document.getElementById('fileImg');
 var nodes = [];
 var selId = null;
 var dragId = null, offX = 0, offY = 0;
@@ -185,7 +196,81 @@ function exportMap() {
   a.download = 'mindmap_' + stamp() + '.txt';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
+
+/* ── 圖片上傳模式（底圖疊加節點，與原有導圖共存）── */
+function hasImg() {
+  try { return !!localStorage.getItem(IMGKEY); } catch (e) { return false; }
+}
+function applyImgMode() {
+  var tag = document.getElementById('modeTag');
+  var clr = document.getElementById('btnClearImg');
+  if (hasImg()) {
+    bgimg.src = localStorage.getItem(IMGKEY);
+    bgimg.style.display = 'block';
+    if (tag) tag.style.display = 'inline-block';
+    if (clr) clr.style.display = 'inline-block';
+  } else {
+    bgimg.removeAttribute('src');
+    bgimg.style.display = 'none';
+    if (tag) tag.style.display = 'none';
+    if (clr) clr.style.display = 'none';
+  }
+}
+bgimg.onload = function () {
+  // 讓畫布至少比圖片寬一點，方便右側擺節點
+  var w = bgimg.offsetWidth, h = bgimg.offsetHeight;
+  if (w + 60 > svg.offsetWidth || h + 60 > svg.offsetHeight) {
+    svg.style.width = (w + 600) + 'px';
+    svg.style.height = (h + 300) + 'px';
+  }
+};
+function pickImg() { fileImg.click(); }
+fileImg.onchange = function () {
+  if (!fileImg.files || !fileImg.files[0]) return;
+  var f = fileImg.files[0];
+  var fr = new FileReader();
+  fr.onload = function () {
+    shrink(fr.result, 1400, function (dataUrl) {
+      try {
+        localStorage.setItem(IMGKEY, dataUrl);
+        alert('圖片已設為底圖，可直接在其上拖曳節點標註。');
+      } catch (e) {
+        alert('圖片太大無法本地儲存（僅本次顯示）。');
+        bgimg.src = dataUrl;
+      }
+      applyImgMode();
+    });
+  };
+  fr.readAsDataURL(f);
+  fileImg.value = '';
+};
+// 用 canvas 等比縮小並壓成 JPEG，避免 base64 過大塞爆 localStorage
+function shrink(dataUrl, maxSide, cb) {
+  var im = new Image();
+  im.onload = function () {
+    var w = im.width, h = im.height, r = 1;
+    if (w > maxSide || h > maxSide) { r = Math.min(maxSide / w, maxSide / h); }
+    var tw = Math.round(w * r), th = Math.round(h * r);
+    var cv = document.createElement('canvas');
+    cv.width = tw; cv.height = th;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, tw, th);
+    ctx.drawImage(im, 0, 0, tw, th);
+    var out = cv.toDataURL('image/jpeg', 0.82);
+    if (out.length > dataUrl.length) out = dataUrl; // 小圖就别反被放大
+    cb(out);
+  };
+  im.onerror = function () { cb(dataUrl); };
+  im.src = dataUrl;
+}
+function clearImg() {
+  if (!confirm('移除底圖？（節點不受影響）')) return;
+  try { localStorage.removeItem(IMGKEY); } catch (e) {}
+  applyImgMode();
+}
+
 load();
+applyImgMode();
 render();
 </script>
 </body>
