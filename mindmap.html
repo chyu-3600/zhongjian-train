@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>思維導圖</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; font-family:"Microsoft JhengHei","PingFang TC",sans-serif; color:#1f2937; background:#f5f7fb; }
+  #errbar { display:none; background:#fee2e2; color:#991b1b; padding:8px 12px; font-size:13px; position:fixed; top:0; left:0; right:0; z-index:9999; }
+  .topbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; position:sticky; top:0; z-index:10; }
+  .topbar h1 { font-size:16px; margin:0 10px 0 0; }
+  .btn { border:1px solid #cbd5e1; background:#fff; color:#1f2937; padding:7px 12px; border-radius:8px; font-size:13px; cursor:pointer; }
+  .btn:hover { background:#eef2ff; }
+  .btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .hint { font-size:12px; color:#6b7280; }
+  #map { position:relative; overflow:auto; height:calc(100% - 54px);
+         background: radial-gradient(#e2e8f0 1px, transparent 1px) 0 0/22px 22px; }
+  #svg { position:absolute; left:0; top:0; width:4000px; height:3000px; pointer-events:none; }
+  .node { position:absolute; min-width:90px; max-width:210px; padding:9px 12px; background:#fff;
+          border:2px solid #93c5fd; border-radius:10px; font-size:14px; cursor:grab; user-select:none;
+          box-shadow:0 1px 3px rgba(0,0,0,.08); white-space:pre-wrap; word-break:break-word; }
+  .node.sel { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.25); }
+</style>
+</head>
+<body>
+<div id="errbar"></div>
+<div class="topbar">
+  <h1>🧠 思維導圖</h1>
+  <button class="btn primary" onclick="addChild()">＋ 新增子節點</button>
+  <button class="btn" onclick="renameSel()">✎ 重新命名</button>
+  <button class="btn" onclick="resetMap()">↺ 重設</button>
+  <button class="btn" onclick="exportMap()">⬇ 匯出大綱</button>
+  <span class="hint">先點選一個節點，再按「新增子節點」；雙擊節點可改名；拖曳可移動。</span>
+</div>
+<div id="map">
+  <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+window.onerror = function(m, s, l, c) {
+  var b = document.getElementById('errbar');
+  if (b) { b.style.display = 'block'; b.textContent = '⚠️ 發生錯誤：' + m + '（行 ' + l + '）'; }
+  return false;
+};
+
+var KEY = 'tr_mindmap_v1';
+var map = document.getElementById('map');
+var svg = document.getElementById('svg');
+var nodes = [];
+var selId = null;
+var dragId = null, offX = 0, offY = 0;
+
+function load() {
+  var raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) {}
+  if (raw) { try { nodes = JSON.parse(raw); } catch (e) { nodes = null; } }
+  if (!nodes || !nodes.length) {
+    nodes = [{ id: 1, pid: null, t: '中心主題', x: 300, y: 200 }];
+    save();
+  }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(nodes)); } catch (e) {}
+}
+function nodeById(id) {
+  for (var i = 0; i < nodes.length; i++) { if (nodes[i].id === id) return nodes[i]; }
+  return null;
+}
+function maxId() {
+  var m = 0;
+  for (var i = 0; i < nodes.length; i++) { if (nodes[i].id > m) m = nodes[i].id; }
+  return m;
+}
+function countChildren(pid) {
+  var c = 0;
+  for (var i = 0; i < nodes.length; i++) { if (nodes[i].pid === pid) c++; }
+  return c;
+}
+function pad2(x) { return (x < 10 ? '0' : '') + x; }
+function stamp() {
+  var d = new Date();
+  return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '-' + pad2(d.getHours()) + pad2(d.getMinutes());
+}
+
+function render() {
+  var olds = map.getElementsByTagName('div');
+  while (olds.length) { map.removeChild(olds[0]); }
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    var d = document.createElement('div');
+    d.className = 'node' + (n.id === selId ? ' sel' : '');
+    d.style.left = n.x + 'px';
+    d.style.top = n.y + 'px';
+    d.appendChild(document.createTextNode(n.t));
+    (function (id, el) {
+      el.onmousedown = function (e) { startDrag(id, e); };
+      el.onclick = function (e) { e.stopPropagation(); selectNode(id); };
+      el.ondblclick = function (e) { e.stopPropagation(); renameNode(id); };
+    })(n.id, d);
+    n.el = d;
+    map.appendChild(d);
+  }
+  drawLines();
+}
+function drawLines() {
+  while (svg.firstChild) { svg.removeChild(svg.firstChild); }
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    if (n.pid == null) continue;
+    var p = nodeById(n.pid);
+    if (!p) continue;
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', p.x + 45);
+    line.setAttribute('y1', p.y + 20);
+    line.setAttribute('x2', n.x + 45);
+    line.setAttribute('y2', n.y + 20);
+    line.setAttribute('stroke', '#93c5fd');
+    line.setAttribute('stroke-width', '2');
+    svg.appendChild(line);
+  }
+}
+function selectNode(id) { selId = id; render(); }
+function addChild() {
+  if (selId == null) { alert('請先點選一個節點'); return; }
+  var p = nodeById(selId);
+  var t = prompt('子節點名稱：', '新節點');
+  if (t == null) return;
+  t = t.trim(); if (!t) return;
+  var id = maxId() + 1;
+  var n = { id: id, pid: selId, t: t, x: p.x + 180, y: p.y + (countChildren(selId) * 44) };
+  nodes.push(n); selId = id; save(); render();
+}
+function renameSel() {
+  if (selId == null) { alert('請先點選一個節點'); return; }
+  renameNode(selId);
+}
+function renameNode(id) {
+  var n = nodeById(id); if (!n) return;
+  var t = prompt('節點名稱：', n.t);
+  if (t == null) return; t = t.trim(); if (!t) return;
+  n.t = t; save(); render();
+}
+function resetMap() {
+  if (!confirm('重設為只有中心主題？')) return;
+  nodes = [{ id: 1, pid: null, t: '中心主題', x: 300, y: 200 }];
+  selId = null; save(); render();
+}
+function startDrag(id, e) {
+  e.stopPropagation();
+  dragId = id; selId = id;
+  var n = nodeById(id);
+  var r = map.getBoundingClientRect();
+  offX = e.clientX - r.left + map.scrollLeft - n.x;
+  offY = e.clientY - r.top + map.scrollTop - n.y;
+  render();
+  e.preventDefault();
+}
+document.onmousemove = function (e) {
+  if (dragId == null) return;
+  var n = nodeById(dragId); if (!n) return;
+  var r = map.getBoundingClientRect();
+  n.x = Math.max(0, e.clientX - r.left + map.scrollLeft - offX);
+  n.y = Math.max(0, e.clientY - r.top + map.scrollTop - offY);
+  if (n.el) { n.el.style.left = n.x + 'px'; n.el.style.top = n.y + 'px'; }
+  drawLines();
+};
+document.onmouseup = function () {
+  if (dragId != null) { save(); }
+  dragId = null;
+};
+function buildOutline(n, depth, lines) {
+  var pad = '';
+  for (var i = 0; i < depth; i++) { pad += '  '; }
+  lines.push(pad + '• ' + n.t);
+  for (var i = 0; i < nodes.length; i++) {
+    if (nodes[i].pid === n.id) { buildOutline(nodes[i], depth + 1, lines); }
+  }
+}
+function exportMap() {
+  var lines = [];
+  buildOutline(nodes[0], 0, lines);
+  var txt = lines.join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
+  a.download = 'mindmap_' + stamp() + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+load();
+render();
+</script>
+</body>
+</html>

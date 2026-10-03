@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>問題反饋</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin:0; font-family:"Microsoft JhengHei","PingFang TC",sans-serif; color:#1f2937; background:#f5f7fb; }
+  #errbar { display:none; background:#fee2e2; color:#991b1b; padding:8px 12px; font-size:13px; position:fixed; top:0; left:0; right:0; z-index:9999; }
+  .wrap { max-width:760px; margin:0 auto; padding:18px 16px 40px; }
+  h1 { font-size:18px; margin:6px 0 4px; }
+  .hint { font-size:12px; color:#6b7280; margin:0 0 14px; }
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-bottom:16px; }
+  label { display:block; font-size:13px; font-weight:600; margin:12px 0 5px; }
+  label:first-child { margin-top:0; }
+  .req { color:#dc2626; }
+  input, select, textarea { width:100%; padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; font-family:inherit; }
+  textarea { resize:vertical; }
+  .btn { border:1px solid #cbd5e1; background:#fff; color:#1f2937; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer; }
+  .btn:hover { background:#eef2ff; }
+  .btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .row h2 { font-size:15px; margin:0; }
+  .item { border:1px solid #e5e7eb; border-radius:10px; padding:11px 12px; margin-top:10px; }
+  .item .meta { font-size:12px; color:#6b7280; margin-bottom:4px; }
+  .badge { display:inline-block; font-size:11px; padding:1px 8px; border-radius:999px; margin-left:6px; }
+  .badge.cat { background:#e0f2fe; color:#0369a1; }
+  .badge.pri { background:#fee2e2; color:#991b1b; }
+  .item .desc { font-size:14px; white-space:pre-wrap; word-break:break-word; }
+  .item .del { float:right; color:#dc2626; border:1px solid #fecaca; background:#fff; border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
+  .empty { color:#9ca3af; font-size:13px; padding:10px 0; }
+</style>
+</head>
+<body>
+<div id="errbar"></div>
+<div class="wrap">
+  <h1>💬 問題反饋</h1>
+  <p class="hint">填寫後會存在本機瀏覽器（localStorage），可匯出檔案交給管理員。未接後端，請勿填寫機密資料。</p>
+
+  <div class="card">
+    <label>姓名<span class="req">*</span></label>
+    <input id="f_name" type="text" placeholder="你的姓名">
+    <label>類別</label>
+    <select id="f_cat">
+      <option>系統問題</option>
+      <option>課程內容</option>
+      <option>操作建議</option>
+      <option>其他</option>
+    </select>
+    <label>優先級</label>
+    <select id="f_pri">
+      <option>一般</option>
+      <option>緊急</option>
+    </select>
+    <label>問題描述<span class="req">*</span></label>
+    <textarea id="f_desc" rows="5" placeholder="請描述問題或建議..."></textarea>
+    <div style="margin-top:14px;">
+      <button class="btn primary" onclick="submitFb()">送出</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <h2>已回報（<span id="cnt">0</span>）</h2>
+      <span>
+        <button class="btn" onclick="exportFb()">⬇ 匯出</button>
+        <button class="btn" onclick="clearFb()">🗑 清除全部</button>
+      </span>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+<script>
+window.onerror = function (m, s, l, c) {
+  var b = document.getElementById('errbar');
+  if (b) { b.style.display = 'block'; b.textContent = '⚠️ 發生錯誤：' + m + '（行 ' + l + '）'; }
+  return false;
+};
+
+var KEY = 'tr_feedback_v1';
+var list = [];
+
+function pad2(x) { return (x < 10 ? '0' : '') + x; }
+function stamp() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function load() {
+  var raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) {}
+  if (raw) { try { list = JSON.parse(raw); } catch (e) { list = []; } }
+  if (!list) list = [];
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {}
+}
+function esc(s) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(s == null ? '' : String(s)));
+  return d.innerHTML;
+}
+function renderList() {
+  var box = document.getElementById('list');
+  document.getElementById('cnt').textContent = list.length;
+  while (box.firstChild) { box.removeChild(box.firstChild); }
+  if (!list.length) {
+    var e = document.createElement('div');
+    e.className = 'empty';
+    e.appendChild(document.createTextNode('尚無回報資料'));
+    box.appendChild(e);
+    return;
+  }
+  for (var i = list.length - 1; i >= 0; i--) {
+    (function (idx) {
+      var it = list[idx];
+      var item = document.createElement('div');
+      item.className = 'item';
+      var del = document.createElement('button');
+      del.className = 'del';
+      del.appendChild(document.createTextNode('刪除'));
+      del.onclick = function () { delOne(idx); };
+      item.appendChild(del);
+      var meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.innerHTML = stamp2(it.ts) + ' · ' + esc(it.name) +
+        '<span class="badge cat">' + esc(it.cat) + '</span>' +
+        '<span class="badge pri">' + esc(it.pri) + '</span>';
+      item.appendChild(meta);
+      var desc = document.createElement('div');
+      desc.className = 'desc';
+      desc.appendChild(document.createTextNode(it.desc));
+      item.appendChild(desc);
+      box.appendChild(item);
+    })(i);
+  }
+}
+function stamp2(ts) {
+  if (!ts) return '';
+  var d = new Date(ts);
+  if (isNaN(d.getTime())) return String(ts);
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function submitFb() {
+  var name = document.getElementById('f_name').value.trim();
+  var cat = document.getElementById('f_cat').value;
+  var pri = document.getElementById('f_pri').value;
+  var desc = document.getElementById('f_desc').value.trim();
+  if (!name) { alert('請填寫姓名'); return; }
+  if (!desc) { alert('請填寫問題描述'); return; }
+  list.push({ ts: Date.now(), name: name, cat: cat, pri: pri, desc: desc });
+  save();
+  document.getElementById('f_name').value = '';
+  document.getElementById('f_desc').value = '';
+  renderList();
+  alert('已送出，感謝你的回饋！');
+}
+function delOne(idx) {
+  if (!confirm('刪除這筆回報？')) return;
+  list.splice(idx, 1); save(); renderList();
+}
+function clearFb() {
+  if (!confirm('清除全部回報資料？此動作無法復原')) return;
+  list = []; save(); renderList();
+}
+function exportFb() {
+  if (!list.length) { alert('尚無資料可匯出'); return; }
+  var lines = [];
+  for (var i = 0; i < list.length; i++) {
+    var it = list[i];
+    lines.push('[' + stamp2(it.ts) + '] ' + it.name + ' / ' + it.cat + ' / ' + it.pri);
+    lines.push(it.desc);
+    lines.push('');
+  }
+  var txt = lines.join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
+  a.download = 'feedback_' + (function () { var d = new Date(); return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); })() + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+load();
+renderList();
+</script>
+</body>
+</html>

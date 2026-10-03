@@ -359,7 +359,9 @@ const CAT_CLS = { '安全訓練': 'g-red', '機台操作': 'g-cyan', '冷鍛工�
 const CAT_GRID = [{ name: '全部', ico: '🗂️', cls: 'g-blue' },
   ...CATS.map(c => ({ name: c, ico: CAT_ICO[c], cls: CAT_CLS[c],
     ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachine()' } : {}) })),
-  { name: '計算公式', ico: '🧮', cls: 'g-amber', act: 'openCalc()' }];
+  { name: '計算公式', ico: '🧮', cls: 'g-amber', act: 'openCalc()' },
+  { name: '思維導圖', ico: '🧠', cls: 'g-teal', act: 'openMindmap()' },
+  { name: '問題反饋', ico: '💬', cls: 'g-pink', act: 'openFeedback()' }];
 
 const TOOLS = [
   { name: '工作備忘錄', ico: '📝', cls: 'g-pink', file: 'notebook/index.html', sub: '自訂分類 · 圖片/PDF 附檔 · 日夜切換（筆記資料獨立儲存，不影響課程與訓練記錄）' },
@@ -570,6 +572,20 @@ function openMachine() {
   openApp({
     ico: '🔧', name: '機台操作', file: 'p4.html',
     sub: '機台操作規範與說明（p4）',
+    back: "goTab('viewHome',0)",
+  });
+}
+function openMindmap() {
+  openApp({
+    ico: '🧠', name: '思維導圖', file: 'mindmap.html',
+    sub: '心智圖 / 思維導圖工具（本機儲存）',
+    back: "goTab('viewHome',0)",
+  });
+}
+function openFeedback() {
+  openApp({
+    ico: '💬', name: '問題反饋', file: 'feedback.html',
+    sub: '回報問題與建議（本機儲存）',
     back: "goTab('viewHome',0)",
   });
 }
