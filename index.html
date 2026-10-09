@@ -257,10 +257,10 @@ td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
   <header class="hero">
     <div class="hero-row">
       <div class="avatar" style="font-size:26px">📚</div>
-      <div><span class="hero-name">其他</span></div>
+      <div><span class="hero-name" id="toolsName">其他</span></div>
       <button class="hero-right" onclick="goTab('viewHome',0)">← 返回</button>
     </div>
-    <div class="hero-sub">實用小工具 · 點選要使用的工具</div>
+    <div class="hero-sub" id="toolsSub">實用小工具 · 點選要使用的工具</div>
   </header>
   <main class="wrap">
     <div class="card">
@@ -360,7 +360,7 @@ const CAT_EMO = { '安全訓練': '🦺', '機台操作': '🔧', '冷鍛工藝'
 const CAT_CLS = { '安全訓練': 'g-red', '機台操作': 'g-cyan', '冷鍛工藝': 'g-orange', '品質管理': 'g-green', '知識庫': 'g-teal', '其他': 'g-pink' };
 const CAT_GRID = [{ name: '全部', ico: 'icons/all.png', cls: 'g-blue' },
   ...CATS.map(c => ({ name: c, ico: CAT_ICO[c], cls: CAT_CLS[c],
-    ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachine()' } : {}) })),
+    ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachineMenu()' } : {}) })),
   { name: '計算公式', ico: 'icons/calc.png', cls: 'g-amber', act: 'openCalc()' },
   { name: '思維導圖', ico: 'icons/mindmap.png', cls: 'g-teal', act: 'openMindmap()' },
   { name: '問題反饋', ico: 'icons/feedback.png', cls: 'g-pink', act: 'openFeedback()' }];
@@ -368,6 +368,12 @@ const CAT_GRID = [{ name: '全部', ico: 'icons/all.png', cls: 'g-blue' },
 const TOOLS = [
   { name: '工作備忘錄', ico: 'icons/memo.png', cls: 'g-pink', file: 'notebook/index.html', sub: '自訂分類 · 圖片/PDF 附檔 · 日夜切換（筆記資料獨立儲存，不影響課程與訓練記錄）' },
   { name: '模具記錄', ico: 'icons/mold.png', cls: 'g-teal', file: 'mold-record.html', sub: '一模具一頁：尺寸／類型／編號／位置／產品／cad × 1D–6D ＋備註，可匯出 PDF' },
+];
+
+// 機台操作：點選機台課程（新增機台 → 在此加一列 { name, ico, cls, file, sub, back }，再把 HTML 檔放 repo 根目錄）
+const MACHINES = [
+  { name: '單元1 基礎日常', ico: 'icons/memo.png', cls: 'g-pink', file: 'p1.html', sub: 'คำศัพท์พื้นฐาน · 211 字詞／13 組 · 中泰語音自動解說＋跟讀', back: "openMachineMenu()" },
+  { name: 'P4 入料自動解說課', ico: 'icons/machine.png', cls: 'g-cyan', file: 'p4.html', sub: 'การป้อนวัตถุดิบ · 中泰雙語 · 入料機構 4 單字／掛牌 9 單字／9 步驟入料', back: "openMachineMenu()" },
 ];
 
 const CALCS = [
@@ -557,14 +563,20 @@ function fitCalc() {
   fit(); new ResizeObserver(fit).observe(d.body);
 }
 function setCat(name) { curCat = name; renderCats(); renderCourses(); }
-function openTools() {
-  $('toolGrid').innerHTML = TOOLS.map((t, i) => `
-    <button class="cat" onclick="openTool(${i})">
+function openTools() { renderToolMenu('其他', '實用小工具 · 點選要使用的工具', TOOLS); }
+function openMachineMenu() { renderToolMenu('機台操作', '機台課程 · 點選要學習的機台', MACHINES); }
+function renderToolMenu(title, sub, list) {
+  $('toolsName').textContent = title;
+  $('toolsSub').textContent = sub;
+  $('toolGrid').innerHTML = list.map((t, i) => `
+    <button class="cat" onclick="openToolItem(${i})">
       <span class="ico ${t.cls}">${icoHtml(t.ico)}</span>${esc(t.name)}
     </button>`).join('');
+  window._toolList = list;
   go('viewTools', document.querySelectorAll('#tabbar button')[0]);
 }
 function openTool(i) { openApp(TOOLS[i]); }
+function openToolItem(i) { openApp(window._toolList[i]); }
 function openKB() {
   openApp({
     ico: 'icons/knowledge.png', name: '知識庫記錄', file: 'knowledge-base.html',
@@ -572,13 +584,7 @@ function openKB() {
     back: "goTab('viewHome',0)",
   });
 }
-function openMachine() {
-  openApp({
-    ico: 'icons/machine.png', name: '機台操作', file: 'p4.html',
-    sub: '機台操作規範與說明（p4）',
-    back: "goTab('viewHome',0)",
-  });
-}
+function openMachine() { openMachineMenu(); }
 function openMindmap() {
   openApp({
     ico: 'icons/mindmap.png', name: '思維導圖', file: 'mindmap.html',

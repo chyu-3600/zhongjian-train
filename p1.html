@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><!-- frame-runtime --><!-- /frame-runtime -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>單元1 基礎日常｜คำศัพท์พื้นฐาน 自動解說課</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Sans+Thai+Looped:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9ECEE; --surface:#FFFFFF; --ink:#1B232A; --muted:#5E6B75; --line:#C9D0D5;
+  --steel:#2C3A45; --plate:#F2C230; --plate-ink:#1B1B14; --alert:#C2362B; --ok:#2F7D4F;
+  --cap:#1F2A33; --cap-ink:#F4F6F7;
+  --zh:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --th:"Noto Sans Thai Looped","Noto Sans Thai","Leelawadee UI","Tahoma",sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11171C; --surface:#1B242B; --ink:#E7ECEF; --muted:#9AA7B0; --line:#33414B;
+    --steel:#0D1317; --cap:#0D1317; --cap-ink:#F4F6F7; --alert:#F0675B; --ok:#5BC08A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11171C; --surface:#1B242B; --ink:#E7ECEF; --muted:#9AA7B0; --line:#33414B;
+  --steel:#0D1317; --cap:#0D1317; --cap-ink:#F4F6F7; --alert:#F0675B; --ok:#5BC08A;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--zh);overflow:hidden}
+.th{font-family:var(--th)}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--plate);outline-offset:2px}
+
+#app{height:100%;display:flex;flex-direction:column}
+#viewport{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{width:1280px;height:720px;flex:none;position:relative;background:var(--surface);
+  border-radius:6px;overflow:hidden;transform-origin:center center;box-shadow:0 2px 0 var(--line)}
+#slide{position:absolute;inset:0 0 92px 0;padding:30px 56px 20px;display:flex;flex-direction:column}
+
+/* caption strip = what is being said right now */
+#cap{position:absolute;left:0;right:0;bottom:0;height:92px;background:var(--cap);color:var(--cap-ink);
+  display:flex;align-items:center;gap:18px;padding:0 32px}
+#cap .chip{flex:none;min-width:58px;text-align:center;padding:6px 10px;border-radius:4px;
+  background:var(--plate);color:var(--plate-ink);font-weight:800;font-size:20px}
+#cap .chip.zh{background:#DCE3E8;color:#1B232A}
+#cap .txt{font-size:24px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#cap .txt.th{font-size:25px}
+#count{position:absolute;right:32px;top:-64px;width:56px;height:56px;border-radius:50%;
+  background:var(--alert);color:#fff;font-size:28px;font-weight:900;display:none;align-items:center;justify-content:center}
+
+/* signature: warehouse location plate */
+.plate{display:inline-block;background:var(--plate);color:var(--plate-ink);font-weight:900;
+  font-family:"Noto Sans TC",sans-serif;padding:4px 12px 3px;border-radius:3px;
+  border:2px solid var(--plate-ink);letter-spacing:.02em;font-size:22px;line-height:1.2}
+.plate.big{font-size:30px;padding:6px 16px 5px}
+
+h1.t{margin:0;font-size:38px;font-weight:900;line-height:1.25;letter-spacing:.01em}
+.t-th{margin:6px 0 0;font-family:var(--th);font-size:28px;font-weight:700;color:var(--muted);line-height:1.4}
+.head{display:flex;align-items:flex-start;gap:18px;margin-bottom:16px}
+.head .plate{margin-top:6px}
+
+/* word card layout */
+.card{flex:1;min-height:0;display:grid;grid-template-columns:430px 1fr;gap:40px}
+.photo{border-radius:4px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;min-height:0}
+.photo img{width:100%;height:100%;object-fit:cover}
+.photo.contain img{object-fit:contain}
+.word{display:flex;flex-direction:column;min-height:0}
+.w-th{font-family:var(--th);font-size:46px;font-weight:800;line-height:1.25;cursor:pointer}
+.w-zh{font-size:30px;font-weight:700;margin-top:0;cursor:pointer}
+.reads{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:8px 0 12px;font-size:18px;color:var(--muted)}
+.reads b{font-weight:500;color:var(--ink)}
+.reads .th{font-size:21px}
+.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--line);padding-top:10px}
+.pts li{display:grid;grid-template-columns:30px 1fr;gap:2px 10px;font-size:20px;line-height:1.35;padding:4px 8px;border-radius:4px;transition:background .2s}
+.pts li::before{content:"";width:12px;height:12px;margin-top:9px;border-radius:2px;background:var(--steel)}
+.pts li.chk::before{background:var(--ok);border-radius:50%}
+.pts li .th{grid-column:2;font-size:18px;color:var(--muted)}
+.pts li .rd{grid-column:2;font-family:var(--th);font-size:16px;color:var(--muted);opacity:.85}
+.pts li.on,.row.on,.st.on{background:color-mix(in srgb,var(--plate) 32%,transparent)}
+[data-say]{cursor:pointer}
+
+/* cover */
+.cover{flex:1;display:grid;grid-template-columns:1fr 420px;gap:48px;align-items:center}
+.cover .unit{font-size:28px;font-weight:700;color:var(--muted)}
+.cover .big-zh{font-size:120px;font-weight:900;line-height:1.05;margin:10px 0 0}
+.cover .big-th{font-family:var(--th);font-size:64px;font-weight:800;line-height:1.3}
+.cover .how{margin-top:28px;font-size:20px;color:var(--muted);line-height:1.6}
+
+/* two goals */
+.goals{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:8px}
+.goal{border:3px solid var(--steel);border-radius:6px;padding:26px 30px}
+.goal .n{font-size:22px;font-weight:900;color:var(--muted)}
+.goal .g-zh{font-size:54px;font-weight:900;margin-top:4px}
+.goal .g-th{font-family:var(--th);font-size:34px;font-weight:700;margin-top:4px;line-height:1.35}
+.warn{margin-top:30px;display:grid;grid-template-columns:auto 1fr;gap:6px 26px;align-items:center;
+  background:color-mix(in srgb,var(--alert) 12%,transparent);border-left:8px solid var(--alert);padding:20px 28px;border-radius:4px}
+.warn .num{grid-row:span 2;font-size:64px;font-weight:900;color:var(--alert);line-height:1}
+.warn .num small{font-size:28px}
+.warn .z{font-size:24px;font-weight:700}
+.warn .th{font-size:22px;color:var(--muted)}
+
+/* tag table */
+.tagwrap{flex:1;min-height:0;display:grid;grid-template-columns:330px 1fr;gap:36px}
+.tbl{display:flex;flex-direction:column;border-top:3px solid var(--steel)}
+.row{display:grid;grid-template-columns:150px 1fr 150px;gap:14px;align-items:center;padding:1px 10px;border-bottom:1px solid var(--line);border-radius:3px}
+.row .z{font-size:20px;font-weight:700;line-height:1.2}
+.row .z small{display:block;font-family:var(--th);font-size:13px;font-weight:400;color:var(--muted)}
+.row .t{font-family:var(--th);font-size:19px;font-weight:700;line-height:1.2}
+.row .t small{display:block;font-family:var(--zh);font-size:13px;font-weight:400;color:var(--muted)}
+.row .ex{font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--muted)}
+.row.hdr{font-size:16px;color:var(--muted);border-bottom:2px solid var(--line)}
+
+/* location */
+.loc{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:stretch}
+.loc .steps{display:flex;flex-direction:column;gap:22px;justify-content:center}
+.loc .stp{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:center;padding:8px;border-radius:4px}
+.loc .stp .plate{grid-row:span 2}
+.loc .stp .z{font-size:28px;font-weight:700}
+.loc .stp .th{font-size:24px;color:var(--muted)}
+
+/* path of wire */
+.path{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);gap:22px;position:relative}
+.node{display:flex;flex-direction:column;gap:10px;min-height:0;padding:8px;border-radius:5px;position:relative}
+.node .photo{flex:1}
+.node .plate{align-self:flex-start}
+.node .nz{font-size:28px;font-weight:900}
+.node .nt{font-family:var(--th);font-size:22px;font-weight:700;line-height:1.3;color:var(--muted)}
+.node:not(:last-child)::after{content:"";position:absolute;right:-20px;top:42%;border:9px solid transparent;border-left:14px solid var(--steel)}
+.node.on{background:color-mix(in srgb,var(--plate) 32%,transparent)}
+
+/* numbers slide */
+.nums{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:20px}
+.nbox{border:3px solid var(--steel);border-radius:6px;padding:16px 22px}
+.nbox .v{font-size:56px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.nbox .l{font-size:21px;font-weight:700;margin-top:4px}
+.nbox .th{font-size:19px;color:var(--muted)}
+.formula{margin-top:16px;font-size:17px;color:var(--muted);line-height:1.6;border-top:1px dashed var(--line);padding-top:10px}
+
+/* compare */
+.cmp{flex:1;display:grid;grid-template-columns:170px 1fr 1fr;border-top:3px solid var(--steel)}
+.cmp>div{padding:12px 16px;border-bottom:1px solid var(--line);font-size:22px;line-height:1.4}
+.cmp .th{display:block;font-size:19px;color:var(--muted);margin-top:2px}
+.cmp .h{font-weight:900;font-size:26px;background:var(--steel);color:#fff}
+.cmp .h .th{color:#C9D3DA}
+.cmp .k{font-weight:700}
+.cmp .fix{color:var(--alert);font-weight:700}
+.cmp .fix .th{color:var(--alert);opacity:.85}
+.cmp>div.on{background:color-mix(in srgb,var(--plate) 32%,transparent)}
+
+/* recap steps */
+.steps9{flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;grid-auto-rows:1fr;gap:12px}
+.st{display:grid;grid-template-columns:52px 1fr;gap:2px 12px;align-items:center;border:2px solid var(--line);border-radius:5px;padding:10px 14px}
+.st .no{grid-row:span 2;font-size:40px;font-weight:900;color:var(--steel);text-align:center}
+.st .z{font-size:25px;font-weight:900}
+.st .th{font-size:18px;color:var(--muted);line-height:1.3}
+
+/* quiz */
+.quiz{flex:1;min-height:0;display:grid;grid-template-columns:480px 1fr;gap:44px}
+.q-ask{font-size:34px;font-weight:900}
+.q-ask .th{display:block;font-size:30px;font-weight:700;color:var(--muted);margin-top:6px}
+.ans{margin-top:28px;border:3px dashed var(--line);border-radius:6px;padding:22px 26px;min-height:200px;display:flex;flex-direction:column;justify-content:center}
+.ans .hide{font-size:26px;color:var(--muted)}
+.ans .show{display:none}
+.revealed .ans{border-style:solid;border-color:var(--ok)}
+.revealed .ans .hide{display:none}
+.revealed .ans .show{display:block}
+.ans .a-zh{font-size:52px;font-weight:900}
+.ans .a-th{font-family:var(--th);font-size:40px;font-weight:800;line-height:1.3}
+.ans .a-rd{font-family:var(--th);font-size:22px;color:var(--muted);margin-top:6px}
+
+/* controls */
+#bar{flex:none;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:var(--steel);color:#fff}
+#bar button,#bar select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:4px;
+  padding:8px 14px;font-size:16px;color:#fff;cursor:pointer;min-height:42px}
+#bar select option{color:#000}
+#bar #play{background:var(--plate);color:var(--plate-ink);border-color:var(--plate);font-weight:900;min-width:120px}
+#bar .pg{font-variant-numeric:tabular-nums;min-width:70px;text-align:center;font-size:16px}
+#bar label{display:flex;align-items:center;gap:6px;font-size:15px}
+#warnbar{display:none;background:var(--alert);color:#fff;font-size:15px;padding:8px 14px;text-align:center}
+
+/* start overlay */
+#start{position:fixed;inset:0;background:rgba(17,23,28,.86);display:flex;align-items:center;justify-content:center;z-index:9;padding:20px}
+#start .box{background:var(--surface);color:var(--ink);border-radius:8px;padding:30px 34px;max-width:560px;width:100%}
+#start h2{margin:0 0 6px;font-size:28px}
+#start p{margin:6px 0;color:var(--muted);line-height:1.6}
+#start .go{margin-top:18px;width:100%;padding:16px;font-size:22px;font-weight:900;border:2px solid var(--plate-ink);border-radius:5px;background:var(--plate);color:var(--plate-ink);cursor:pointer}
+#start .th{font-size:18px}
+#start .go.rec{background:transparent;color:var(--ink);border-color:var(--line);font-size:18px;padding:12px}
+body.rec #bar,body.rec #warnbar{display:none!important}
+body.rec{cursor:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---- unit 1 word lesson ---- */
+.secline{font-size:20px;color:var(--muted);font-weight:700;margin-top:10px}
+.secline .th{font-weight:500}
+.duo{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:6px}
+.blk{border:3px solid var(--line);border-radius:6px;padding:22px 30px;display:flex;flex-direction:column;justify-content:center;gap:10px;min-width:0;transition:border-color .2s,background .2s;cursor:pointer}
+.blk.on{border-color:var(--plate);background:color-mix(in srgb,var(--plate) 22%,transparent)}
+.blk .lab{font-size:20px;font-weight:700;color:var(--muted)}
+.blk .bw{font-weight:900;line-height:1.15;word-break:keep-all;overflow-wrap:anywhere}
+.blk.z .bw{font-family:var(--zh)}
+.blk.t .bw{font-family:var(--th);font-weight:800;line-height:1.35}
+.blk .rd{border-top:2px dashed var(--line);padding-top:12px;margin-top:6px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:baseline}
+.blk .rd span{font-size:18px;color:var(--muted)}
+.blk .rd b{font-size:30px;font-weight:700}
+.blk .rd b.th{font-family:var(--th)}
+.prog{display:flex;gap:4px;margin-top:14px}
+.prog i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.prog i.d{background:var(--steel)}
+.prog i.c{background:var(--plate)}
+:root[data-theme="dark"] .prog i.d{background:#9AA7B0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .prog i.d{background:#9AA7B0}}
+
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:minmax(0,1fr);gap:8px 14px;border-top:3px solid var(--steel);padding-top:10px}
+.gi{display:grid;grid-template-columns:62px 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;padding:2px 10px;border-radius:4px;border-bottom:1px solid var(--line);min-height:0}
+.gi .no{grid-row:span 2;font-size:15px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.gi .z{font-size:22px;font-weight:900;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gi .t{font-family:var(--th);font-size:17px;line-height:1.25;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gi.on{background:color-mix(in srgb,var(--plate) 32%,transparent)}
+
+.toc{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;align-content:center}
+.toc button{display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:baseline;text-align:left;background:none;border:none;border-bottom:1px solid var(--line);padding:6px 4px;cursor:pointer}
+.toc button:hover{background:color-mix(in srgb,var(--plate) 25%,transparent)}
+.toc .n{font-weight:900;color:var(--muted);font-variant-numeric:tabular-nums;font-size:18px}
+.toc .z{font-weight:700;font-size:20px}
+.toc .c{grid-column:2;font-size:14px;color:var(--muted)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.chips span{border:2px solid var(--line);border-radius:4px;padding:4px 10px;font-size:20px;font-weight:700}
+.qword{font-family:var(--th);font-size:72px;font-weight:800;line-height:1.3;margin-top:18px}
+.qrd{font-size:24px;color:var(--muted);margin-top:4px}
+#bar #sec{max-width:210px}
+#count.fol{background:var(--ok)}
+</style>
+<style data-id="immersive-translate-input-injected-css"></style></head>
+<body>
+<div id="app">
+    <div id="viewport">
+    <div id="stage" style="transform: scale(0.544444);">
+      <div id="slide"><div class="cover" style="grid-template-columns:1fr 520px">
+  <div>
+    <div class="unit">單元 1 ｜ บทที่ 1</div>
+    <div class="big-zh">基礎日常</div>
+    <div class="big-th">คำศัพท์พื้นฐาน</div>
+    <div class="how">211 個字詞、13 組。每個字先聽中文、再聽泰文、再跟著念一次中文。<br><span class="th">211 คำ แบ่งเป็น 13 กลุ่ม ฟังภาษาจีน ฟังภาษาไทย แล้วพูดภาษาจีนตาม</span></div>
+  </div>
+  <div class="toc"><button data-jump="0"><span class="n">1</span><span class="z">出勤與作息</span><span class="c">18 個字詞</span></button><button data-jump="1"><span class="n">2</span><span class="z">打招呼與溝通</span><span class="c">17 個字詞</span></button><button data-jump="2"><span class="n">3</span><span class="z">人員、證件與薪水</span><span class="c">16 個字詞</span></button><button data-jump="3"><span class="n">4</span><span class="z">安全防護</span><span class="c">14 個字詞</span></button><button data-jump="4"><span class="n">5</span><span class="z">廠區場所</span><span class="c">16 個字詞</span></button><button data-jump="5"><span class="n">6</span><span class="z">水電與開關</span><span class="c">10 個字詞</span></button><button data-jump="6"><span class="n">7</span><span class="z">設備與物品</span><span class="c">18 個字詞</span></button><button data-jump="7"><span class="n">8</span><span class="z">狀態與回報</span><span class="c">9 個字詞</span></button><button data-jump="8"><span class="n">9</span><span class="z">清潔整理</span><span class="c">9 個字詞</span></button><button data-jump="9"><span class="n">10</span><span class="z">常用動作</span><span class="c">33 個字詞</span></button><button data-jump="10"><span class="n">11</span><span class="z">形容詞（相反詞）</span><span class="c">21 個字詞</span></button><button data-jump="11"><span class="n">12</span><span class="z">數字 1～20</span><span class="c">20 個字詞</span></button><button data-jump="12"><span class="n">13</span><span class="z">單位</span><span class="c">10 個字詞</span></button></div>
+</div></div>
+      <div id="cap"><div id="count"></div><span class="chip" id="chip">▶</span><span class="txt" id="captxt">按「開始上課」，系統會自動用中文和泰文念每一個字詞。</span></div>
+    </div>
+  </div>
+  <div id="bar">
+    <button id="prev" aria-label="上一頁">◀ 上一頁</button>
+    <button id="play">▶ 播放</button>
+    <button id="next" aria-label="下一頁">下一頁 ▶</button>
+    <span class="pg" id="pg">1 / 268</span>
+    <button id="again">🔁 重念這頁</button>
+    <select id="sec" aria-label="跳到第幾組"><option value="0">第 1 組 出勤與作息</option><option value="1">第 2 組 打招呼與溝通</option><option value="2">第 3 組 人員、證件與薪水</option><option value="3">第 4 組 安全防護</option><option value="4">第 5 組 廠區場所</option><option value="5">第 6 組 水電與開關</option><option value="6">第 7 組 設備與物品</option><option value="7">第 8 組 狀態與回報</option><option value="8">第 9 組 清潔整理</option><option value="9">第 10 組 常用動作</option><option value="10">第 11 組 形容詞（相反詞）</option><option value="11">第 12 組 數字 1～20</option><option value="12">第 13 組 單位</option></select>
+    <select id="mode" aria-label="解說語言">
+      <option value="both">中文＋泰文</option>
+      <option value="th">只念泰文</option>
+      <option value="zh">只念中文</option>
+    </select>
+    <select id="rate" aria-label="語速">
+      <option value="0.75">慢速</option>
+      <option value="0.9" selected="">中速</option>
+      <option value="1">正常</option>
+    </select>
+    <select id="fol" aria-label="跟讀停頓">
+      <option value="0">跟讀：不停</option>
+      <option value="3" selected="">跟讀：停 3 秒</option>
+      <option value="5">跟讀：停 5 秒</option>
+    </select>
+    <label><input type="checkbox" id="auto" checked=""> 自動翻頁</label>
+    <button id="fs">⛶ 全螢幕</button>
+  </div>
+</div>
+
+<div id="start">
+  <div class="box">
+    <h2>單元 1 基礎日常｜自動解說課</h2>
+    <p class="th">บทที่ 1 คำศัพท์พื้นฐานในชีวิตประจำวัน — มีเสียงอ่านภาษาจีนและภาษาไทยอัตโนมัติ</p>
+    <p>211 個字詞分成 13 組。每個字詞念「中文 → 泰文 → 中文」，再停 3 秒讓學員跟著念。每組最後有複習和 2 題測驗。</p>
+    <p>點畫面上的中文或泰文，可以單獨再念一次。工具列可直接跳到某一組。空白鍵＝播放／暫停，←→＝換頁。</p>
+    <button class="go" id="go">▶ 開始上課｜เริ่มเรียน</button>
+    <button class="go rec" id="recgo">🎬 錄影模式：全螢幕、隱藏工具列，從第 1 頁播到最後</button>
+    <p style="font-size:14px">錄影模式中按 Esc 可結束。</p>
+  </div>
+</div>
+<script>
+const D = {"W": [["1-001", "上班", "เข้างาน", "ซ่าง ปาน", "考恩 甘"], ["1-002", "下班", "เลิกงาน", "เซี่ย ปาน", "勒 甘"], ["1-003", "打卡", "ตอกบัตร", "ต๋า ค่า", "多 巴特"], ["1-004", "遲到", "มาสาย", "ฉือ เต้า", "馬 賽"], ["1-005", "早退", "กลับก่อนเวลา", "เจ่า ทุ่ย", "格拉 貝恩威拉"], ["1-006", "加班", "ทำโอที", "เจีย ปาน", "塔歐提"], ["1-007", "請假", "ลางาน", "ฉิ่ง เจีย", "拉 甘"], ["1-008", "休假", "วันหยุด", "ซิว เจีย", "萬育"], ["1-009", "早安", "อรุณสวัสดิ์", "เจ่า อัน", "阿倫 薩瓦迪"], ["1-010", "你好", "สวัสดี", "หนี่ ห่าว", "薩瓦迪"], ["1-011", "謝謝", "ขอบคุณ", "เซี่ย เซี่ย", "口布坤"], ["1-012", "對不起", "ขอโทษ", "ตุ้ย ปู้ ฉี่", "口託"], ["1-013", "聽得懂", "ฟังเข้าใจ", "ทิง เต๋อ ต่ง", "方 康齊"], ["1-014", "聽不懂", "ฟังไม่เข้าใจ", "ทิง ปู้ ต่ง", "方 麥康齊"], ["1-015", "再說一次", "พูดอีกครั้ง", "ไจ้ ซัว อี้ ซื่อ", "普 一康"], ["1-016", "知道", "รู้", "จือ เต้า", "魯"], ["1-017", "不知道", "ไม่รู้", "ปู้ จือ เต้า", "麥 魯"], ["1-018", "會", "เป็น", "ฮุ่ย", "奔"], ["1-019", "不會", "ไม่เป็น", "ปู้ ฮุ่ย", "麥 奔"], ["1-020", "師傅", "ช่างอาวุโส", "สือ ฟู่", "燦阿武梭"], ["1-021", "主管", "หัวหน้า", "จู่ กวน", "華納"], ["1-022", "同事", "เพื่อนร่วมงาน", "ถง ซื่อ", "普恩洛翁"], ["1-023", "新人", "พนักงานใหม่", "ซิน เหริน", "帕納翁麥"], ["1-024", "休息", "พัก", "ซิว ซี", "帕"], ["1-025", "吃飯", "กินข้าว", "ฉือ ฟ่าน", "根考"], ["1-026", "喝水", "ดื่มน้ำ", "เฮอ สุ่ย", "登南"], ["1-027", "工廠大門口", "หน้าประตูโรงงาน", "กง ฉ่าง ต้า เหมิน โข่ว", "納 帕都 龍甘"], ["1-028", "安全第一", "ปลอดภัยไว้ก่อน", "อัน ฉวน ตี้ อี้", "普洛派 威貢"], ["1-029", "小心", "ระวัง", "เสี่ยว ซิน", "拉旺"], ["1-030", "危險", "อันตราย", "เว่ย เซี่ยน", "安塔萊"], ["1-031", "戴安全帽", "สวมหมวกนิรภัย", "ไต้ อัน ฉวน เม่า", "蘇帽尼派"], ["1-032", "穿工作服", "ใส่ชุดทำงาน", "ฉวน กง จั้ว ฟู", "賽楚甘"], ["1-033", "穿安全鞋", "ใส่รองเท้าเซฟตี้", "ฉวน อัน ฉวน เซี่ย", "賽龍道賽迪"], ["1-034", "戴護目鏡", "สวมแว่นนิรภัย", "ไต้ หู้ มู่ จิ้ง", "蘇溫尼派"], ["1-035", "戴耳塞", "ใส่ที่อุดหู", "ไต้ เอ๋อร์ เซ่อ", "賽提烏"], ["1-036", "戴手套", "สวมถุงมือ", "ไต้ โส่ว เท่า", "蘇通姆"], ["1-037", "戴口罩", "ใส่หน้ากาก", "ไต้ โข่ว จ้าว", "賽 納嘎"], ["1-038", "不可以戴手套", "ห้ามใส่ถุงมือ", "ปู้ เขอ อี่ ไต้ โส่ว เท่า", "含 賽 通姆"], ["1-039", "辦公室", "สำนักงาน", "ป้าน กง ซื่อ", "桑納干"], ["1-040", "品管室", "ห้องควบคุมคุณภาพ", "ผิ่น กว่าน ซื่อ", "紅 庫阿坎 坤納帕"], ["1-041", "自動倉", "คลังสินค้าอัตโนมัติ", "จื้อ ต้ง ชาง", "康辛嘎 阿托諾馬提"], ["1-042", "線材倉庫區", "พื้นที่เก็บวัตถุดิบ", "เซี่ยน ไฉ ชาง คู่ ชวี", "普恩提 葛 瓦督迪"], ["1-043", "待入庫區", "พื้นที่รอเข้าคลัง", "ไต้ รู่ คู่ ชวี", "普恩提 若 康康"], ["1-044", "模具間", "ห้องแม่พิมพ์", "โหมว จวี้ เจียน", "紅 梅平"], ["1-045", "走道", "ทางเดิน", "โจ่ว เต้า", "湯登"], ["1-046", "餐廳", "โรงอาหาร", "ชาน ทิง", "龍阿漢"], ["1-047", "廁所", "ห้องน้ำ", "เว่ย เซิง เจียน", "紅南"], ["1-048", "衛生紙", "กระดาษชำระ", "เว่ย เซิง จื่อ", "格拉達 珊拉"], ["1-049", "洗手劑", "สบู่ล้างมือ", "สี่ โส่ว จี้", "沙布 朗姆"], ["1-050", "宿舍", "หอพัก", "ซู่ เซ่อ", "侯帕"], ["1-051", "浴室", "ห้องอาบน้ำ", "ยวี่ ซื่อ", "紅 阿南"], ["1-052", "熱水器", "เครื่องทำน้ำอุ่น", "เร่อ สุ่ย ชี่", "克朗 塔南溫"], ["1-053", "門", "ประตู", "เหมิน", "帕都"], ["1-054", "風(空壓機)", "ลม (เครื่องอัดอากาศ)", "เฟิง (คง ยา จี)", "隆 克朗阿"], ["1-055", "電(電閘)", "ไฟ (เบรกเกอร์)", "เตี้ยน (เตี้ยน จ๋า)", "發 貝克哥"], ["1-056", "電燈", "ไฟ", "เตี้ยน เติง", "發"], ["1-057", "風扇", "พัดลม", "เฟิง ซ่าน", "帕隆"], ["1-058", "開關", "สวิตช์", "ไค กวน", "斯威"], ["1-059", "按鈕", "ปุ่มกด", "อัน หนิ่ว", "普姆高"], ["1-060", "啟動（開機）", "เปิดเครื่อง", "ฉี่ ต้ง (ไค จี)", "培克朗"], ["1-061", "停止（關機）", "หยุดเครื่อง", "ถิง จื้อ (กวน จี)", "育克朗"], ["1-062", "緊急停止", "หยุดฉุกเฉิน", "จิน จี้ ถิง จื้อ", "育秋臣"], ["1-063", "開關面板(箱)", "ตู้สวิตช์", "ไค กวน เมี่ยน ป่าน", "督 斯威"], ["1-064", "地板", "พื้น", "ตี้ ป่าน", "普恩"], ["1-065", "樓梯(機台鐵梯)", "บันได (บันไดเหล็กเครื่องจักร)", "โหลว ที (จี ไถ เถี่ย ที)", "班代 雷克"], ["1-066", "鐵桶", "ถังเหล็ก", "เถี่ย ถ่ง", "湯 雷克"], ["1-067", "棧板", "พาเลท", "จ้าน ปั่น", "帕雷特"], ["1-068", "瀝油盤", "ถาดรองน้ำมัน", "ลี่ โหยว ผาน", "塔 隆 南曼"], ["1-069", "鐵盤(小盤)", "ถาดเหล็ก (ถาดเล็ก)", "เถี่ย ผาน (เสี่ยว ผาน)", "塔 雷克"], ["1-070", "PP桶(藍色箱子)", "ถัง PP (กล่องสีน้ำเงิน)", "พีพี ถ่ง (หลาน เซ่อ เซียง จื่อ)", "湯 皮皮 剛克 西南恩"], ["1-071", "車床", "เครื่องกลึง", "เชอ ฉวง", "克朗 格"], ["1-072", "(鍛造)機器", "เครื่องจักร", "จี ฉี", "克朗扎"], ["1-073", "正常", "ปกติ", "เจิ้ง ฉ่าง", "帕ติ"], ["1-074", "異常", "ผิดปกติ", "อี้ ฉ่าง", "皮特帕ติ"], ["1-075", "故障", "เสีย", "กู้ จ้าง", "西"], ["1-076", "檢查", "ตรวจสอบ", "เจี่ยน ฉา", "德若頌"], ["1-077", "確認", "ยืนยัน", "เชว่ เหริน", "印楊"], ["1-078", "異常回報", "รายงานความผิดปกติ", "อี้ ฉาง หุย เป้า", "拉揚坎 瓦姆皮帕ติ"], ["1-079", "工作進度回報", "รายงานความคืบหน้างาน", "กง จั้ว จิ้น ตู้ หุย เป้า", "拉揚坎 克普納 康"], ["1-080", "好（良品）", "งานดี", "ห่าว (เหลียง ผิ่น)", "甘迪"], ["1-081", "不好(不良品）", "งานเสีย", "ปู้ ห่าว (ปู้ เหลียง ผิ่น)", "甘西雅"], ["1-082", "收拾(清理)", "เก็บให้เรียบร้อย (ทำความสะอาด)", "โซว สือ (ชิง หลี่)", "葛 海 良若"], ["1-083", "桌子", "โต๊ะ", "จัว จื่อ", "多"], ["1-084", "椅子", "เก้าอี้", "อี่ จื่อ", "高 伊"], ["1-085", "掃地", "กวาดพื้น", "เส้า ตี้", "瓜普恩"], ["1-086", "畚箕", "ที่โกยผง", "เปิ่น จี้", "提 葛勇 蓬"], ["1-087", "垃圾桶", "ถังขยะ", "ลา จี ถ่ง", "湯 卡雅"], ["1-088", "資源回收", "รีไซเคิล", "จือ เหยียน หุย โซว", "里 賽 克"], ["1-089", "廢鐵", "เศษเหล็ก", "เฟ่ย เทีย", "賽雷克"], ["1-090", "倒垃圾", "ทิ้งขยะ", "เต้า ลา จี", "提卡雅"], ["1-091", "擦油污", "เช็ดคราบน้ำมัน", "ฉา โหยว อู", "切 卡 南曼"], ["1-092", "木屑(除油)", "ขี้เลื่อย (ใช้ดูดซับน้ำมัน)", "มู่ เสี่ย (ฉู โหยว)", "奇 雷伊 斜督薩 南曼"], ["1-093", "考試", "สอบ", "เข่า สื้อ", "索"], ["1-094", "拿料過來", "เอาวัสดุมานี่", "หนา เลี่ยว กั้ว ไล", "凹 瓦督 馬尼"], ["1-095", "放料回去", "เอาวัสดุกลับไป", "ฟ่าง เลี่ยว หุย ชวี่", "凹 瓦督 格拉拜"], ["1-096", "拿來", "เอามา", "หนา ไล", "凹 馬"], ["1-097", "放回去", "เอากลับไป", "ฟ่าง หุย ชวี่", "凹 格拉拜"], ["1-098", "推車", "รถเข็น", "ทุย เชอ", "若肯"], ["1-099", "堆高機", "รถยก", "ตุย เกา จี", "若 優"], ["1-100", "天車（吊車）", "เครนเหนือศีรษะ", "เทียน เชอ (เตียว เชอ)", "克倫努西"], ["1-101", "磅秤（過磅）", "ชั่งน้ำหนัก", "ป้าง เฉิง (กัว ป้าง)", "燦南那"], ["1-102", "電腦", "คอมพิวเตอร์", "เตี้ยน เหน่า", "空 皮 優 特"], ["1-103", "咖啡罐", "กระป๋องกาแฟ", "คา เฟย กว้าน", "格 邦 嘎 菲"], ["1-104", "(鐵)架子", "ชั้นวางเหล็ก", "เถี่ย เจี้ย จื่อ", "燦 旺 雷克"], ["1-105", "開(打開)", "เปิด", "ไค (ต่า ไค)", "培"], ["1-106", "關(關閉)", "ปิด", "กวน (กวน ปี้)", "比"], ["1-107", "拆(拆下來)", "ถอดออก", "ไฉ (ไฉ เซี่ย ไล)", "透 奧"], ["1-108", "裝(裝上去)", "ใส่เข้าไป", "จวง (จวง ซ่าง ชวี่)", "賽 考 拜"], ["1-109", "量(測量)", "วัด", "เลี่ยง (เช่อ เลี่ยง)", "瓦"], ["1-110", "找(找東西)", "หา", "เจ่า (เจ่า ตง ซี)", "哈"], ["1-111", "問(問人)", "ถาม", "เวิ่น (เวิ่น เหริน)", "湯"], ["1-112", "去(移動…)", "ไป", "ชวี่ (อี๋ ต้ง)", "拜"], ["1-113", "拿(抓取)", "หยิบ", "หนา (จวา ชวี่)", "耶 比"], ["1-114", "收(整理乾淨)", "เก็บ", "โซว (เจิ้ง หลี่ กาน จิ้ง)", "葛"], ["1-115", "想", "คิด", "เสี่ยง", "奇"], ["1-116", "借", "ยืม", "เจี้ย", "雍"], ["1-117", "架(模具)", "ติดตั้ง (แม่พิมพ์)", "เจี้ย (โหมว จวี้)", "迪 湯 梅 平"], ["1-118", "看", "ดู", "คั่น", "嘟"], ["1-119", "洗", "ล้าง", "สี่", "朗"], ["1-120", "幫(幫忙)", "ช่วย", "ปัง (ปัง หมาง)", "秋 威"], ["1-121", "撞(機台)", "ชน (เครื่องจักร)", "จ้วง (จี ไถ)", "春 克朗 扎"], ["1-122", "壓", "กด", "ยา", "葛"], ["1-123", "拉", "ดึง", "ลา", "登"], ["1-124", "進(調整前進)", "เดินหน้า", "จิ้น (เถียว เจิ้ง เฉียน จิ้น)", "登 納"], ["1-125", "退(調整後退)", "ถอยหลัง", "ทุ่ย (เถียว เจิ้ง โฮ่ว ทุ่ย)", "透 伊 朗"], ["1-126", "加(多一點)", "เพิ่ม", "เจีย (ตัว อี้ เตี่ยน)", "培"], ["1-127", "減(少一點)", "ลด", "เจี่ยน (เส่า อี้ เตี่ยน)", "羅"], ["1-128", "算(計算)", "คำนวณ", "ซ่วน (จี๋ ซ่วน)", "康 暖"], ["1-129", "等(等一下)", "รอ", "เติ่ง (เติ่ง อี้ เซี่ย)", "若"], ["1-130", "吃", "กิน", "ชือ", "根"], ["1-131", "喝 (水)", "ดื่ม (น้ำ)", "เฮอ (สุ่ย)", "登 南"], ["1-132", "睡 (覺)", "นอน (หลับ)", "สุ่ย (เจวี๋ย)", "農 拉"], ["1-133", "按 (壓下去)", "กด", "อั้น (ยา เซี่ย ชวี่)", "葛"], ["1-134", "冷", "เย็น", "เหลิ่ง", "燕"], ["1-135", "熱", "ร้อน", "เร่อ", "隆"], ["1-136", "燙", "ร้อนจัด", "ท่าง", "隆 扎"], ["1-137", "大", "ใหญ่", "ต้า", "雅 伊"], ["1-138", "小", "เล็ก", "เสี่ยว", "雷克"], ["1-139", "快", "เร็ว", "ไคว่", "療"], ["1-140", "慢", "ช้า", "ม่าน", "恰"], ["1-141", "長", "ยาว", "ฉาง", "雅 烏"], ["1-142", "短", "สั้น", "ต่วน", "散"], ["1-143", "可以", "ได้", "เขอ อี่", "代"], ["1-144", "不可以", "ไม่ได้", "ปู้ เขอ อี่", "麥 代"], ["1-145", "亂", "รก", "หลวน", "若"], ["1-146", "整齊", "เรียบร้อย", "เจิ้ง ฉี", "里 雅 布 若 伊"], ["1-147", "直", "ตรง", "จื๋อ", "冬"], ["1-148", "彎", "โค้ง", "หวาน", "空"], ["1-149", "對", "ถูก", "ตุ้ย", "吐克"], ["1-150", "錯", "ผิด", "ฉัว", "皮特"], ["1-151", "困難", "ยาก", "คุ่น หนาน", "雅"], ["1-152", "簡單", "ง่าย", "เจี่ยน ตัน", "該"], ["1-153", "粗(粗糙)", "หยาบ", "ชู (ชู เซ่า)", "雅 布"], ["1-154", "細(細緻)", "ละเอียด", "ซี่ (ซี่ จื้อ)", "拉 伊 雅特"], ["1-155", "滅火器", "ถังดับเพลิง", "เมี่ย หั่ว ฉี", "湯達培勒"], ["1-156", "消防栓", "หัวดับเพลิง", "เซียว ฟัง ศวน", "華達培勒"], ["1-157", "逃生門", "ประตูหนีไฟ", "เถา เซิง เหมิน", "帕都尼派"], ["1-158", "上午", "ช่วงเช้า", "ซ่าง อู่", "秋恩勞"], ["1-159", "下午", "ช่วงบ่าย", "เซีย อู่", "秋恩拜"], ["1-160", "白班", "กะกลางวัน", "ไป๋ ปาน", "嘎甘拉旺"], ["1-161", "夜班", "กะกลางคืน", "เย่ ปาน", "嘎甘拉克恩"], ["1-162", "今天", "วันนี้", "จิน เทียน", "萬尼"], ["1-163", "明天", "พรุ่งนี้", "หมิง เทียน", "普龍尼"], ["1-164", "昨天", "เมื่อวาน", "ซั่ว เทียน", "蒙瓦恩"], ["1-165", "名字", "ชื่อ", "หมิง จื้อ", "赤"], ["1-166", "護照", "หนังสือเดินทาง", "หู้ จ้าว", "南 斯 登 湯"], ["1-167", "居留證", "บัตรถิ่นที่อยู่ (ARC)", "จวี หลิว เจิ้ง", "巴特廷於"], ["1-168", "健保卡", "บัตรประกันสุขภาพ", "เจี้ยน เป่า ข่า", "巴特 帕干 素 帕"], ["1-169", "薪水", "เงินเดือน", "ซิน เสุ่ย", "恩登"], ["1-170", "扣款", "หักเงิน", "โข่ว ควาน", "哈恩"], ["1-171", "稅金", "ภาษี", "สุ่ย จิน", "帕西"], ["1-172", "簽名", "เซ็นชื่อ", "เชียน หมิง", "森赤"], ["1-173", "電話", "โทรศัพท์", "เตี้ยน ฮั่ว", "多拉薩"], ["1-174", "手機號碼", "เบอร์โทรศัพท์มือถือ", "โส่ว จี ห้าว หม่า", "伯 陀拉薩 牟鐵"], ["1-175", "拍照", "ถ่ายรูป", "ไพ เจ้า", "泰路普"], ["1-176", "翻譯", "แปลภาษา", "ฟ่าน อี้", "培拉帕薩"], ["1-177", "幫忙", "ช่วย", "บัง หม่าง", "秋威"], ["1-178", "一起", "ด้วยกัน", "อี้ ฉี่", "杜甘"], ["1-179", "合作", "ร่วมมือ", "เหอ จั้ว", "茹姆姆"], ["1-180", "辛苦了", "เหนื่อยหน่อยนะ", "ซิน ขู่ เลอ", "嫩累那"], ["1-181", "加油", "สู้ๆ", "เจีย โยว", "蘇蘇"], ["1-182", "1", "หนึ่ง", "อี้", "能"], ["1-183", "2", "สอง", "เอ้อร์", "宋"], ["1-184", "3", "สาม", "ซาน", "薩姆"], ["1-185", "4", "สี่", "สื้อ", "西"], ["1-186", "5", "ห้า", "อู่", "哈"], ["1-187", "6", "หก", "ลิ่ว", "霍克"], ["1-188", "7", "เจ็ด", "ชี", "傑特"], ["1-189", "8", "แปด", "ปา", "培特"], ["1-190", "9", "เก้า", "จิ่ว", "高"], ["1-191", "10", "สิบ", "สือ", "辛"], ["1-192", "11", "สิบเอ็ด", "สือ อี้", "辛 一特"], ["1-193", "12", "สิบสอง", "สือ เอ้อร์", "辛 宋"], ["1-194", "13", "สิบสาม", "สือ ซาน", "辛 薩姆"], ["1-195", "14", "สิบสี่", "สือ สื้อ", "辛 西"], ["1-196", "15", "สิบห้า", "สือ อู่", "辛 哈"], ["1-197", "16", "สิบหก", "สือ ลิ่ว", "辛 霍克"], ["1-198", "17", "สิบเจ็ด", "สือ ชี", "辛 傑特"], ["1-199", "18", "สิบแปด", "สือ ปา", "辛 培特"], ["1-200", "19", "สิบเก้า", "สือ จิ่ว", "辛 高"], ["1-201", "20", "ยี่สิบ", "เอ้อร์ สือ", "伊 辛"], ["1-202", "公斤 (KG)", "กิโลกรัม", "กง จิน", "奇羅甘"], ["1-203", "公克 (g)", "กรัม", "กง เค่อ", "甘"], ["1-204", "公尺 (M)", "เมตร", "กง ฉื่อ", "梅特"], ["1-205", "公分 (CM)", "เซนติเมตร", "กง เฟิน", "森提梅特"], ["1-206", "公釐 (MM)", "มิลลิเมตร", "กง หลี", "米利梅特"], ["1-207", "條", "เตี๋ยว (0.01 มม.)", "เถียว", "提奧"], ["1-208", "英吋(Inch)", "นิ้ว", "อิง ชุ่น", "紐"], ["1-209", "2分", "สองหุน", "เอ้อร์ เฟิน", "宋魂"], ["1-210", "3分", "สามหุน", "ซาน เฟิน", "薩姆魂"], ["1-211", "4分", "สี่หุน", "สื้อ เฟิน", "西魂"]], "G": [["出勤與作息", "การเข้างานและเวลาทำงาน", [1, 2, 3, 4, 5, 6, 7, 8, 24, 25, 26, 158, 159, 160, 161, 162, 163, 164]], ["打招呼與溝通", "การทักทายและการสื่อสาร", [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 93, 177, 178, 179, 180, 181]], ["人員、證件與薪水", "บุคคล เอกสาร และเงินเดือน", [20, 21, 22, 23, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176]], ["安全防護", "ความปลอดภัยและอุปกรณ์ป้องกัน", [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 155, 156, 157]], ["廠區場所", "สถานที่ในโรงงาน", [27, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]], ["水電與開關", "ลม ไฟฟ้า และสวิตช์", [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]], ["設備與物品", "อุปกรณ์และสิ่งของ", [64, 65, 66, 67, 68, 69, 70, 71, 72, 83, 84, 98, 99, 100, 101, 102, 103, 104]], ["狀態與回報", "สถานะและการรายงาน", [73, 74, 75, 76, 77, 78, 79, 80, 81]], ["清潔整理", "การทำความสะอาด", [82, 85, 86, 87, 88, 89, 90, 91, 92]], ["常用動作", "คำกริยาที่ใช้บ่อย", [94, 95, 96, 97, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133]], ["形容詞（相反詞）", "คำคุณศัพท์ (คำตรงข้าม)", [134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154]], ["數字 1～20", "ตัวเลข 1–20", [182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201]], ["單位", "หน่วยวัด", [202, 203, 204, 205, 206, 207, 208, 209, 210, 211]]]};
+const W = {}; D.W.forEach(r=>{ W[parseInt(r[0].split('-')[1],10)] = {no:r[0], zh:r[1], th:r[2], zr:r[3], tr:r[4]}; });
+const G = D.G;
+const ZN=['一','二','三','四','五','六','七','八','九','十','十一','十二','十三'];
+const TN=['หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า','สิบ','สิบเอ็ด','สิบสอง','สิบสาม'];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* what the voice says: drop latin-only notes like (KG), turn brackets into a pause */
+const sayZh=s=>String(s).replace(/\s*[（(]\s*[A-Za-z]+\s*[)）]/g,'').replace(/\s*[（(]\s*/g,'，').replace(/\s*[)）]\s*/g,'，').replace(/，+$/,'').trim();
+const sayTh=s=>String(s).replace(/\s*\(\s*[A-Za-z]+\s*\)/g,'').replace(/\s*\(\s*/g,' ').replace(/\s*\)\s*/g,' ').trim();
+const zhSize=s=>{const n=[...String(s)].length; return n<=2?150:n<=3?128:n<=4?110:n<=6?84:n<=8?66:52;};
+const thSize=s=>{const n=String(s).length; return n<=6?92:n<=10?78:n<=16?62:n<=24?48:38;};
+
+const S=[], SEC_START=[];
+
+/* cover */
+S.push({ html:`<div class="cover" style="grid-template-columns:1fr 520px">
+  <div>
+    <div class="unit">單元 1 ｜ บทที่ 1</div>
+    <div class="big-zh">基礎日常</div>
+    <div class="big-th">คำศัพท์พื้นฐาน</div>
+    <div class="how">211 個字詞、13 組。每個字先聽中文、再聽泰文、再跟著念一次中文。<br><span class="th">211 คำ แบ่งเป็น 13 กลุ่ม ฟังภาษาจีน ฟังภาษาไทย แล้วพูดภาษาจีนตาม</span></div>
+  </div>
+  <div class="toc">${G.map((g,i)=>`<button data-jump="${i}"><span class="n">${i+1}</span><span class="z">${esc(g[0])}</span><span class="c">${g[2].length} 個字詞</span></button>`).join('')}</div>
+</div>`,
+ say:[
+  {zh:'今天上第一單元：基礎日常。'},
+  {th:'วันนี้เรียนบทที่หนึ่ง คำศัพท์พื้นฐานในชีวิตประจำวัน'},
+  {zh:'一共兩百一十一個字詞，分成十三組。每個字先聽中文，再聽泰文，然後跟著大聲念中文。'},
+  {th:'มีทั้งหมด 211 คำ แบ่งเป็น 13 กลุ่ม แต่ละคำ ฟังภาษาจีนก่อน แล้วฟังภาษาไทย จากนั้นพูดภาษาจีนตามดังๆ'}
+ ]});
+
+G.forEach((g,gi)=>{
+  const ids=g[2], n=ids.length;
+  SEC_START.push(S.length);
+  /* section cover */
+  S.push({ sec:gi, html:`<div class="head"><span class="plate big">第 ${gi+1} 組</span><div><h1 class="t">${esc(g[0])}：${n} 個字詞</h1><p class="t-th">กลุ่มที่ ${gi+1} ${esc(g[1])} : ${n} คำ</p></div></div>
+  <div class="cover" style="grid-template-columns:1fr;align-items:start">
+   <div><div class="big-zh" style="font-size:104px">${esc(g[0])}</div><div class="big-th" style="font-size:54px">${esc(g[1])}</div>
+   <div class="chips">${ids.map(i=>`<span>${esc(W[i].zh)}</span>`).join('')}</div></div>
+  </div>`,
+   say:[{zh:`第${ZN[gi]}組，${g[0].replace(/[（(].*?[)）]/g,'').replace('1～20','一到二十')}，一共${n}個字詞。`},{th:`กลุ่มที่${TN[gi]} ${g[1].replace(/\(.*?\)/g,'')} มีทั้งหมด ${n} คำ`}]});
+  /* word slides */
+  ids.forEach((id,k)=>{
+    const w=W[id];
+    S.push({ sec:gi, html:`<div class="head"><span class="plate big">${w.no}</span><div><h1 class="t" style="font-size:30px">第 ${gi+1} 組 ${esc(g[0])}</h1><p class="t-th" style="font-size:22px">${esc(g[1])} ・ ${k+1} / ${n}</p></div></div>
+    <div class="duo">
+      <div class="blk z" id="bz" data-say data-zh="${esc(sayZh(w.zh))}" data-th="${esc(sayTh(w.th))}" data-one="zh">
+        <div class="lab">中文 ｜ ภาษาจีน</div>
+        <div class="bw" style="font-size:${zhSize(w.zh)}px">${esc(w.zh)}</div>
+        <div class="rd"><span class="th">พูดภาษาจีน</span><b class="th">${esc(w.zr)}</b></div>
+      </div>
+      <div class="blk t" id="bt" data-say data-zh="${esc(sayZh(w.zh))}" data-th="${esc(sayTh(w.th))}" data-one="th">
+        <div class="lab">泰文 ｜ ภาษาไทย</div>
+        <div class="bw" style="font-size:${thSize(w.th)}px">${esc(w.th)}</div>
+        <div class="rd"><span>主管念泰文</span><b>${esc(w.tr)}</b></div>
+      </div>
+    </div>
+    <div class="prog">${ids.map((_,j)=>`<i class="${j<k?'d':j===k?'c':''}"></i>`).join('')}</div>`,
+     say:[{zh:sayZh(w.zh),hl:'bz'},{th:sayTh(w.th),hl:'bt'},{zh:sayZh(w.zh),hl:'bz'},{follow:1,hl:'bz'}]});
+  });
+  /* recap pages, max 18 per page */
+  const pages=Math.ceil(n/18), per=Math.ceil(n/pages);
+  for(let p=0;p<pages;p++){
+    const part=ids.slice(p*per,(p+1)*per);
+    const say=[{zh:p===0?`複習第${ZN[gi]}組，聽到中文就跟著念。`:'繼續複習。'},{th:p===0?`ทบทวนกลุ่มที่${TN[gi]} ได้ยินภาษาจีนแล้วพูดตาม`:'ทบทวนต่อ'}];
+    part.forEach((id,j)=>say.push({rz:1,zh:sayZh(W[id].zh),th:sayTh(W[id].th),hl:'g'+j}));
+    S.push({ sec:gi, html:`<div class="head"><span class="plate big">複習</span><div><h1 class="t">第 ${gi+1} 組 ${esc(g[0])}${pages>1?`（${p+1}/${pages}）`:''}：聽到就跟著念</h1><p class="t-th">ทบทวนกลุ่มที่ ${gi+1} ได้ยินแล้วพูดตาม</p></div></div>
+    <div class="grid" style="grid-template-rows:repeat(${Math.ceil(part.length/3)},minmax(0,1fr))">${part.map((id,j)=>`<div class="gi" id="g${j}" data-say data-zh="${esc(sayZh(W[id].zh))}" data-th="${esc(sayTh(W[id].th))}"><span class="no">${W[id].no}</span><span class="z">${esc(W[id].zh)}</span><span class="t">${esc(W[id].th)}</span></div>`).join('')}</div>`, say});
+  }
+  /* 2 quiz items: about 1/3 and 2/3 through the group */
+  [Math.floor(n/3), Math.floor(n*2/3)].forEach((qi,q)=>{
+    const w=W[ids[qi]];
+    S.push({ sec:gi, html:`<div class="head"><span class="plate big">測驗</span><div><h1 class="t">看泰文，說出中文</h1><p class="t-th">ดูภาษาไทย แล้วพูดเป็นภาษาจีน</p></div></div>
+    <div class="quiz" style="grid-template-columns:1fr 1fr">
+      <div><div class="q-ask">這句中文怎麼說？<span class="th">ภาษาจีนพูดว่าอะไร</span></div>
+        <div class="qword">${esc(w.th)}</div><div class="qrd">${esc(w.no)}</div></div>
+      <div class="ans" style="margin-top:0"><div class="hide">想一想，大聲說出來……<br><span class="th">คิดแล้วพูดออกมาดังๆ</span></div>
+        <div class="show"><div class="a-zh">${esc(w.zh)}</div><div class="a-rd">${esc(w.zr)}</div></div></div>
+    </div>`,
+     say:[{th:'ภาษาจีนพูดว่าอะไร'},{th:sayTh(w.th)},{wait:5000},{act:'reveal'},{zh:sayZh(w.zh)},{th:sayTh(w.th)},{zh:sayZh(w.zh)}]});
+  });
+});
+
+/* ending */
+S.push({ html:`<div class="cover" style="grid-template-columns:1fr">
+  <div>
+    <div class="unit">單元 1 基礎日常 ｜ เรียนจบแล้ว</div>
+    <div class="big-zh" style="font-size:84px">主管會到現場抽考</div>
+    <div class="big-th" style="font-size:46px">หัวหน้าจะมาสุ่มถามที่หน้างาน</div>
+    <div class="how" style="font-size:24px">主管說中文，你要聽得懂、做得到；主管念泰文，你要說出中文。<br><span class="th">หัวหน้าพูดภาษาจีน ต้องฟังเข้าใจและทำได้ หัวหน้าพูดภาษาไทย ต้องตอบเป็นภาษาจีนได้</span></div>
+  </div>
+</div>`,
+ say:[{zh:'第一單元上完了。'},{th:'บทที่หนึ่งเรียนจบแล้ว'},{zh:'主管會到現場抽考。主管說中文，你要聽得懂；主管念泰文，你要說出中文。'},{th:'หัวหน้าจะมาสุ่มถามที่หน้างาน หัวหน้าพูดภาษาจีน ต้องฟังเข้าใจ หัวหน้าพูดภาษาไทย ต้องตอบเป็นภาษาจีนได้'}]});
+
+/* ---------- player ---------- */
+const $=s=>document.querySelector(s);
+const slideEl=$('#slide'), stage=$('#stage'), chip=$('#chip'), capTxt=$('#captxt'), countEl=$('#count');
+let idx=0, step=0, playing=false, token=0, voices={zh:null,th:null};
+
+$('#sec').innerHTML=G.map((g,i)=>`<option value="${i}">第 ${i+1} 組 ${esc(g[0])}</option>`).join('');
+
+function pickVoices(){
+  const vs=speechSynthesis.getVoices();
+  const score=v=>(/natural|online|neural/i.test(v.name)?2:0)+(v.localService?0:1);
+  const best=list=>list.sort((a,b)=>score(b)-score(a))[0]||null;
+  voices.th=best(vs.filter(v=>/^th/i.test(v.lang)));
+  voices.zh=best(vs.filter(v=>/^zh[-_]TW/i.test(v.lang)))||best(vs.filter(v=>/^zh/i.test(v.lang)||/^cmn/i.test(v.lang)));
+  const miss=[]; if(!voices.th) miss.push('泰文'); if(!voices.zh) miss.push('中文');
+  const w=$('#warnbar');
+  if(vs.length && miss.length){w.style.display='block';w.textContent=`這台裝置沒有${miss.join('、')}語音：字幕照常顯示、照時間翻頁，但不會出聲。用 Microsoft Edge 或 Android 手機開啟可以念泰文。`;}
+  else w.style.display='none';
+}
+if('speechSynthesis' in window){pickVoices();speechSynthesis.onvoiceschanged=pickVoices;}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rate=()=>parseFloat($('#rate').value);
+const est=(lang,t)=>Math.max(1200,(lang==='th'?t.length*85:t.length*260)/rate());
+
+function caption(lang,text){
+  chip.textContent=lang==='th'?'ไทย':'中';
+  chip.className='chip '+(lang==='th'?'th':'zh');
+  capTxt.textContent=text; capTxt.className='txt '+(lang==='th'?'th':'');
+}
+function speak(lang,text){
+  return new Promise(res=>{
+    caption(lang,text);
+    const v=voices[lang];
+    if(!('speechSynthesis' in window)||!v){ setTimeout(res,est(lang,text)); return; }
+    const u=new SpeechSynthesisUtterance(text);
+    u.voice=v; u.lang=v.lang; u.rate=rate()*(lang==='th'?0.95:1);
+    let done=false; const fin=()=>{if(!done){done=true;res();}};
+    u.onend=fin; u.onerror=fin;
+    setTimeout(fin,est(lang,text)*2.5+4000);
+    speechSynthesis.speak(u);
+  });
+}
+function hl(id){
+  slideEl.querySelectorAll('.on').forEach(e=>e.classList.remove('on'));
+  if(id){const e=slideEl.querySelector('#'+id); if(e){ e.classList.add('on'); } }
+}
+function allowed(st){
+  const m=$('#mode').value;
+  if(st.rz||st.follow) return true;
+  if(st.zh!==undefined) return m!=='th';
+  if(st.th!==undefined) return m!=='zh';
+  return true;
+}
+async function countdown(sec,my,cls){
+  countEl.className=cls||''; countEl.style.display='flex';
+  for(let s=sec;s>0;s--){ if(my!==token){countEl.style.display='none';return;} countEl.textContent=s; await sleep(1000); }
+  countEl.style.display='none';
+}
+async function run(){
+  const my=++token; playing=true; setPlayBtn();
+  const steps=S[idx].say;
+  while(step<steps.length){
+    if(my!==token) return;
+    const st=steps[step];
+    if(allowed(st)){
+      if(st.hl!==undefined) hl(st.hl);
+      if(st.follow){
+        const f=parseInt($('#fol').value,10);
+        if(f>0 && $('#mode').value!=='th'){ caption('zh','跟著念 ｜ พูดตาม'); await countdown(f,my,'fol'); }
+      }
+      else if(st.wait){ await countdown(Math.round(st.wait/1000),my); }
+      else if(st.act==='reveal'){ stage.classList.add('revealed'); }
+      else if(st.rz){ if($('#mode').value==='th') await speak('th',st.th); else await speak('zh',st.zh); }
+      else if(st.zh!==undefined) await speak('zh',st.zh);
+      else if(st.th!==undefined) await speak('th',st.th);
+      if(my!==token) return;
+      await sleep(st.rz?500:350);
+    }
+    step++;
+  }
+  if(my!==token) return;
+  hl(null);
+  if($('#auto').checked && idx<S.length-1){ await sleep(900); if(my===token){ go(idx+1,true); } }
+  else if(document.body.classList.contains('rec')){ caption('zh','— 完 ｜ จบ —'); playing=false; }
+  else { playing=false; setPlayBtn(); }
+}
+function stopSpeech(){ token++; if('speechSynthesis' in window) speechSynthesis.cancel(); countEl.style.display='none'; }
+function render(){
+  stage.classList.remove('revealed');
+  slideEl.innerHTML=S[idx].html;
+  $('#pg').textContent=`${idx+1} / ${S.length}`;
+  if(S[idx].sec!==undefined) $('#sec').value=S[idx].sec;
+  slideEl.querySelectorAll('[data-say]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation(); stopSpeech(); playing=false; setPlayBtn();
+    const my=token; const m=$('#mode').value, one=el.dataset.one;
+    (async()=>{
+      if(one==='zh'){ await speak('zh',el.dataset.zh); return; }
+      if(one==='th'){ await speak('th',el.dataset.th); return; }
+      if(m!=='th') await speak('zh',el.dataset.zh); if(my!==token) return;
+      if(m!=='zh'){ await sleep(250); await speak('th',el.dataset.th); }
+    })();
+  }));
+  slideEl.querySelectorAll('[data-jump]').forEach(el=>el.addEventListener('click',()=>go(SEC_START[+el.dataset.jump])));
+}
+function go(n,keepPlaying){
+  if(n<0||n>=S.length) return;
+  stopSpeech(); idx=n; step=0; render();
+  if(keepPlaying||playing) run(); else { setPlayBtn(); }
+}
+function setPlayBtn(){ $('#play').textContent=playing?'⏸ 暫停':'▶ 播放'; }
+function toggle(){
+  if(playing){ stopSpeech(); playing=false; setPlayBtn(); }
+  else { const steps=S[idx].say; if(step>=steps.length) step=0; run(); }
+}
+function unlock(){ if('speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); pickVoices(); } }
+
+$('#prev').onclick=()=>go(idx-1);
+$('#next').onclick=()=>go(idx+1);
+$('#play').onclick=toggle;
+$('#again').onclick=()=>{ stopSpeech(); step=0; stage.classList.remove('revealed'); run(); };
+$('#sec').onchange=e=>go(SEC_START[+e.target.value]);
+$('#fs').onclick=()=>{ const d=document.documentElement; if(!document.fullscreenElement){ (d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d);} else document.exitFullscreen(); };
+$('#go').onclick=()=>{ $('#start').style.display='none'; unlock(); run(); };
+$('#recgo').onclick=()=>{
+  document.body.classList.add('rec'); $('#auto').checked=true; $('#start').style.display='none';
+  const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d);
+  unlock(); stopSpeech(); idx=0; step=0; render(); setTimeout(()=>{fit(); run();},1500);
+};
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement) document.body.classList.remove('rec'); setTimeout(fit,100); });
+document.addEventListener('keydown',e=>{
+  if($('#start').style.display!=='none') return;
+  if(e.target.tagName==='SELECT') return;
+  if(e.key===' '){e.preventDefault();toggle();}
+  else if(e.key==='ArrowRight') go(idx+1);
+  else if(e.key==='ArrowLeft') go(idx-1);
+});
+function fit(){
+  const vp=$('#viewport'); const s=Math.min(vp.clientWidth/1280, vp.clientHeight/720);
+  stage.style.transform=`scale(${s})`;
+}
+addEventListener('resize',fit); new ResizeObserver(fit).observe($('#viewport'));
+render(); fit();
+</script>
+
+
+</body></body></html>

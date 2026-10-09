@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 $SSH    = "C:\Windows\System32\OpenSSH\ssh.exe"
 $SCP    = "C:\Windows\System32\OpenSSH\scp.exe"
 $KEY    = "C:\Users\di's'c\.ssh\oci_vm_key"
-$HOST   = "ubuntu@129.225.180.201"
+$RHOST  = "ubuntu@129.225.180.201"
 $REMOTE = "/var/www/train/"
 $SRC    = $PSScriptRoot   # 腳本所在目錄 = zhongjian-train-deploy
 
@@ -25,13 +25,13 @@ $items = Get-ChildItem -Path $SRC | Where-Object { $EXCLUDE -notcontains $_.Name
 if ($items.Count -eq 0) { Write-Error "沒有可同步的檔案，請檢查 SRC 路徑"; exit 1 }
 
 $paths = $items.FullName
-Write-Host "==> 同步 $($items.Count) 個項目到 ${HOST}:${REMOTE}"
-& $SCP -i $KEY -o StrictHostKeyChecking=accept-new -r @paths "${HOST}:${REMOTE}"
+Write-Host "==> 同步 $($items.Count) 個項目到 ${RHOST}:${REMOTE}"
+& $SCP -i $KEY -o StrictHostKeyChecking=accept-new -r @paths "${RHOST}:${REMOTE}"
 if ($LASTEXITCODE -ne 0) { Write-Error "scp 失敗 (exit $LASTEXITCODE)"; exit 1 }
 
 if ($Reload) {
-    Write-Host "==> reload nginx on $HOST"
-    & $SSH -i $KEY -o StrictHostKeyChecking=accept-new $HOST "sudo nginx -t && (sudo systemctl reload nginx 2>/dev/null || sudo nginx -s reload)"
+    Write-Host "==> reload nginx on $RHOST"
+    & $SSH -i $KEY -o StrictHostKeyChecking=accept-new $RHOST "sudo nginx -t && (sudo systemctl reload nginx 2>/dev/null || sudo nginx -s reload)"
     if ($LASTEXITCODE -ne 0) { Write-Error "nginx reload 失敗"; exit 1 }
 }
 
