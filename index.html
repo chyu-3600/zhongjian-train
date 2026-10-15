@@ -362,7 +362,6 @@ const CAT_GRID = [{ name: '全部', ico: 'icons/all.png', cls: 'g-blue' },
   ...CATS.map(c => ({ name: c, ico: CAT_ICO[c], cls: CAT_CLS[c],
     ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachineMenu()' } : {}) })),
   { name: '計算公式', ico: 'icons/calc.png', cls: 'g-amber', act: 'openCalc()' },
-  { name: '思維導圖', ico: 'icons/mindmap.png', cls: 'g-teal', act: 'openMindmap()' },
   { name: '問題反饋', ico: 'icons/feedback.png', cls: 'g-pink', act: 'openFeedback()' }];
 
 const TOOLS = [
