@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>產品異常與改進</title>
+<style>
+:root{
+  --bg:#f6f4f0; --card:#fff; --border:#e3ddd4;
+  --fg:#2a221c; --fg2:#5a4e42; --muted:#a09888;
+  --accent:#c0392b; --accent-dim:rgba(192,57,43,.08);
+}
+[data-theme="dark"]{
+  --bg:#0f1218; --card:#1a2030; --border:#2a3a50;
+  --fg:#e8eaed; --fg2:#b0c0d8; --muted:#6b7280;
+  --accent:#e74c3c; --accent-dim:rgba(231,76,60,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;transition:background .3s,color .3s}
+.c{max-width:860px;margin:0 auto;padding:12px}
+.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:6px 0}
+.hl{display:flex;align-items:center;gap:10px}
+.ic{width:38px;height:38px;border-radius:10px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ht{font-size:18px;font-weight:800;line-height:1.2}
+.hs{font-size:11px;color:var(--muted);margin-top:2px}
+.th-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--fg2);cursor:pointer;font-size:15px}
+.tb{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.btn{padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--fg2);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{opacity:.9;color:#fff}
+.btn:disabled{opacity:.55;cursor:wait}
+.search{flex:1;min-width:150px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--fg);font-size:13px;font-family:inherit;outline:none}
+.search:focus{border-color:var(--accent)}
+/* 記錄卡 */
+.rc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.rc-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.doc{font-size:15px;font-weight:800;color:var(--accent);word-break:break-all}
+.ops{display:flex;gap:6px;flex-shrink:0}
+.mini{padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--fg2);cursor:pointer;font-family:inherit}
+.mini:hover{border-color:var(--accent);color:var(--accent)}
+.mini.del{color:#c0392b}
+.mini.del:hover{border-color:#c0392b;color:#c0392b}
+.rc-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--fg2);margin:8px 0 4px}
+.rc-s{font-size:13px;line-height:1.65;margin:6px 0;white-space:pre-wrap;word-break:break-word}
+.rc-s b{color:var(--muted);font-size:12px;font-weight:700}
+.rc-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none;border:1px solid var(--border);max-width:100%}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.pdf{background:#e8f6ef;color:#1a8f55}
+.chip.xl{background:#e8f0fb;color:#2456a8}
+.chip.yt{background:#ffecec;color:#c0392b}
+.yt-thumb{position:relative;display:block;margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid var(--border);line-height:0}
+.yt-thumb img{width:100%;display:block}
+.yt-thumb .pl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;background:rgba(0,0,0,.28);line-height:1}
+.rc-t{font-size:11px;color:var(--muted);margin-top:8px}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:44px 0}
+.footer{text-align:center;font-size:11px;color:var(--muted);padding:18px 0 8px}
+/* 彈窗 */
+.mw{position:fixed;inset:0;background:rgba(20,16,50,.55);display:flex;align-items:flex-end;justify-content:center;z-index:100}
+@media(min-width:640px){.mw{align-items:center;padding:18px}}
+.modal{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:18px}
+@media(min-width:640px){.modal{border-radius:18px}}
+.modal h3{font-size:17px;margin-bottom:4px}
+.modal label{display:block;font-size:12px;color:var(--muted);margin:14px 0 5px;font-weight:700}
+.modal input,.modal textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:14px;font-family:inherit;outline:none}
+.modal input:focus,.modal textarea:focus{border-color:var(--accent)}
+.modal textarea{resize:vertical;line-height:1.6;min-height:70px}
+.modal input[type=file]{padding:7px;font-size:12px}
+.filechip{display:flex;align-items:center;gap:8px;background:var(--accent-dim);border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:8px}
+.filechip a{color:var(--accent);font-weight:700;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filechip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px}
+.filehint{font-size:11px;color:var(--muted);margin-top:4px}
+.yt-prev{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;margin-top:8px}
+.yt-prev iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.ma{display:flex;gap:10px;margin-top:20px}
+.ma .btn{flex:1;padding:12px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140px);background:rgba(30,25,60,.92);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;z-index:200;transition:transform .35s;max-width:86vw;text-align:center;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="c">
+  <div class="hd">
+    <div class="hl">
+      <div class="ic">⚠️</div>
+      <div>
+        <div class="ht">產品異常與改進</div>
+        <div class="hs" id="sync">載入中…</div>
+      </div>
+    </div>
+    <button class="th-btn" id="thBtn" title="日夜切換">🌙</button>
+  </div>
+
+  <div class="tb">
+    <button class="btn primary" onclick="openForm()">＋ 新增記錄</button>
+    <input class="search" id="kw" placeholder="搜尋單號／機台／客戶／類別／內容…" oninput="kw=this.value;render()">
+    <button class="btn" onclick="exportJson()" title="匯出 JSON 備份">匯出備份</button>
+  </div>
+
+  <div id="list"></div>
+  <div class="empty hidden" id="empty">尚無記錄，按「＋ 新增記錄」建立第一筆</div>
+  <div class="footer">產品異常與改進 · PDF／Excel 存雲端 · 記錄雲端同步</div>
+</div>
+
+<!-- 新增／編輯彈窗 -->
+<div class="mw hidden" id="mw" onclick="if(event.target===this)closeForm()">
+  <div class="modal">
+    <h3 id="formTitle">新增記錄</h3>
+    <label>日期</label>
+    <input id="f_date" type="date">
+    <label>文件單號 *</label>
+    <input id="f_doc" placeholder="例：PA-2026-001" maxlength="60">
+    <label>機台編號</label>
+    <input id="f_machine" placeholder="例：CF-200" maxlength="60">
+    <label>客戶名稱</label>
+    <input id="f_customer" placeholder="例：XX 精密工業" maxlength="80">
+    <label>產品類別</label>
+    <input id="f_category" list="catList" placeholder="例：螺栓" maxlength="60">
+    <datalist id="catList">
+      <option value="螺栓"></option><option value="螺帽"></option><option value="墊片"></option>
+      <option value="扣件"></option><option value="鍛造件"></option><option value="車削件"></option>
+      <option value="沖壓件"></option><option value="其他"></option>
+    </datalist>
+    <label>產品異常說明</label>
+    <textarea id="f_anomaly" rows="4" placeholder="異常現象、發生位置、數量、發現時間…"></textarea>
+    <label>PDF 附件</label>
+    <div id="pdfBox"></div>
+    <input type="file" id="f_pdf" accept=".pdf,application/pdf">
+    <div class="filehint">上傳後存在雲端，可點擊開啟</div>
+    <label>Excel 附件</label>
+    <div id="xlBox"></div>
+    <input type="file" id="f_xl" accept=".xls,.xlsx,.csv">
+    <label>YouTube 影片連結</label>
+    <input id="f_yt" placeholder="https://www.youtube.com/watch?v=…" maxlength="200">
+    <div class="yt-prev hidden" id="ytPrev"></div>
+    <label>產品異常改進說明</label>
+    <textarea id="f_improve" rows="4" placeholder="改善對策、負責人、進度、驗證結果…"></textarea>
+    <div class="ma">
+      <button class="btn" onclick="closeForm()">取消</button>
+      <button class="btn primary" id="btnSave" onclick="save()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ Supabase（與訓練 App／知識庫共用 tool_storage，key='product_anomaly'）═══ */
+const SB_URL = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
+const SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
+const SB_KEY = 'product_anomaly';
+const LS_DATA = 'anomalyData', LS_DIRTY = 'anomalyDirty', LS_THEME = 'anomaly-theme';
+
+let data = [], kw = '', editId = null, rmPdf = false, rmXl = false;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = d => d ? String(d).slice(0, 10) + ' ' + String(d).slice(11, 16) : '';
+function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function ytId(url) {
+  const m = String(url || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{6,20})/);
+  return m ? m[1] : '';
+}
+let toastTimer = null;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ═══ 主題 ═══ */
+(function () {
+  if (localStorage.getItem(LS_THEME) === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    $('thBtn').textContent = '☀️';
+  }
+})();
+$('thBtn').onclick = function () {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+  $('thBtn').textContent = dark ? '🌙' : '☀️';
+  localStorage.setItem(LS_THEME, dark ? 'light' : 'dark');
+};
+
+/* ═══ 雲端同步（tool_storage：PATCH 整列，不存在才 POST）═══ */
+async function loadFromCloud() {
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data', {
+      headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON }
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (d && d[0] && Array.isArray(d[0].data)) return d[0].data;
+  } catch (e) { }
+  return null;
+}
+async function saveToCloud(arr) {
+  const H = { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' };
+  try {
+    let r = await fetch(SB_URL + '/rest/v1/tool_storage?key=eq.' + SB_KEY, {
+      method: 'PATCH', headers: { ...H, Prefer: 'return=representation' },
+      body: JSON.stringify({ data: arr })
+    });
+    if (!r.ok) throw 0;
+    const rows = await r.json();
+    if (Array.isArray(rows) && rows.length) return true;
+    r = await fetch(SB_URL + '/rest/v1/tool_storage', {
+      method: 'POST', headers: { ...H, Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ key: SB_KEY, data: arr })
+    });
+    return r.ok;
+  } catch (e) { return false; }
+}
+function syncUi(ok, checked) {
+  const el = $('sync');
+  el.textContent = ok ? '☁️ 已同步到雲端'
+    : (checked ? '⚠️ 雲端同步失敗，資料先留在本機（請檢查網路後再操作一次）' : '☁️ 連線中…');
+}
+function markDirty(on) { if (on) localStorage.setItem(LS_DIRTY, '1'); else localStorage.removeItem(LS_DIRTY); }
+function readLocal() {
+  try { const v = JSON.parse(localStorage.getItem(LS_DATA) || '[]'); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function saveLocal() { localStorage.setItem(LS_DATA, JSON.stringify(data)); }
+async function loadData() {
+  const local = readLocal();
+  if (localStorage.getItem(LS_DIRTY) === '1' && local.length) {
+    data = local; render();
+    const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true);
+    return;
+  }
+  const cloud = await loadFromCloud();
+  if (cloud) { data = cloud; saveLocal(); syncUi(true, true); }
+  else {
+    data = local; syncUi(false, false);
+    if (data.length) { const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true); }
+  }
+  render();
+}
+
+/* ═══ 檔案上傳（Supabase storage bucket 'media'，路徑 anomaly/）═══ */
+async function uploadFile(file) {
+  const ext = (file.name.match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
+  const path = 'anomaly/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  const r = await fetch(SB_URL + '/storage/v1/object/media/' + path, {
+    method: 'POST',
+    headers: {
+      apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON,
+      'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true'
+    },
+    body: file
+  });
+  if (!r.ok) throw new Error('上傳失敗（' + r.status + '）');
+  return SB_URL + '/storage/v1/object/public/media/' + path;
+}
+
+/* ═══ 渲染 ═══ */
+function render() {
+  const k = kw.trim().toLowerCase();
+  const sorted = [...data].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.created || '').localeCompare(String(a.created || '')));
+  const list = k ? sorted.filter(r => [r.date, r.doc_no, r.machine_no, r.customer, r.category, r.anomaly, r.improvement]
+    .join(' ').toLowerCase().includes(k)) : sorted;
+  $('empty').classList.toggle('hidden', list.length > 0);
+  $('list').innerHTML = list.map(card).join('');
+}
+function card(r) {
+  const yt = ytId(r.youtube);
+  return '<div class="rc">'
+    + '<div class="rc-hd"><span class="doc">' + esc(r.doc_no || '（未命名）') + '</span>'
+    + '<span class="ops">'
+    + '<button class="mini" onclick="openForm(\'' + r.id + '\')">編輯</button>'
+    + '<button class="mini del" onclick="del(\'' + r.id + '\')">刪除</button>'
+    + '</span></div>'
+    + '<div class="rc-meta">'
+    + (r.date ? '<span>📅 ' + esc(r.date) + '</span>' : '')
+    + (r.machine_no ? '<span>🔧 ' + esc(r.machine_no) + '</span>' : '')
+    + (r.customer ? '<span>🏭 ' + esc(r.customer) + '</span>' : '')
+    + (r.category ? '<span>📦 ' + esc(r.category) + '</span>' : '')
+    + '</div>'
+    + (r.anomaly ? '<div class="rc-s"><b>異常：</b>' + esc(r.anomaly) + '</div>' : '')
+    + (r.improvement ? '<div class="rc-s"><b>改進：</b>' + esc(r.improvement) + '</div>' : '')
+    + '<div class="rc-f">'
+    + (r.pdf_url ? '<a class="chip pdf" href="' + esc(r.pdf_url) + '" target="_blank" rel="noopener">📄 <span>' + esc(r.pdf_name || 'PDF 附件') + '</span></a>' : '')
+    + (r.excel_url ? '<a class="chip xl" href="' + esc(r.excel_url) + '" target="_blank" rel="noopener">📊 <span>' + esc(r.excel_name || 'Excel 附件') + '</span></a>' : '')
+    + (yt ? '<a class="chip yt" href="https://www.youtube.com/watch?v=' + yt + '" target="_blank" rel="noopener">▶ YouTube 影片</a>' : '')
+    + '</div>'
+    + (yt ? '<a class="yt-thumb" href="https://www.youtube.com/watch?v=' + yt + '" target="_blank" rel="noopener">'
+      + '<img src="https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg" alt="YouTube 影片" loading="lazy">'
+      + '<span class="pl">▶</span></a>' : '')
+    + '<div class="rc-t">' + (r.updated ? '更新 ' + fmt(r.updated) : '') + (r.created && r.created !== r.updated ? ' · 建立 ' + fmt(r.created) : '') + '</div>'
+    + '</div>';
+}
+
+/* ═══ 新增／編輯 ═══ */
+function openForm(id) {
+  editId = id || null; rmPdf = false; rmXl = false;
+  const r = id ? data.find(x => x.id === id) : null;
+  $('formTitle').textContent = r ? '編輯記錄' : '新增記錄';
+  $('f_date').value = r ? (r.date || '') : today();
+  $('f_doc').value = r ? (r.doc_no || '') : '';
+  $('f_machine').value = r ? (r.machine_no || '') : '';
+  $('f_customer').value = r ? (r.customer || '') : '';
+  $('f_category').value = r ? (r.category || '') : '';
+  $('f_anomaly').value = r ? (r.anomaly || '') : '';
+  $('f_improve').value = r ? (r.improvement || '') : '';
+  $('f_yt').value = r ? (r.youtube || '') : '';
+  $('f_pdf').value = ''; $('f_xl').value = '';
+  renderFileBox('pdfBox', r && r.pdf_url, r && r.pdf_name, 'pdf');
+  renderFileBox('xlBox', r && r.excel_url, r && r.excel_name, 'xl');
+  ytPreview();
+  $('mw').classList.remove('hidden');
+  if (window.innerWidth >= 640) $('f_doc').focus();
+}
+function renderFileBox(boxId, url, name, kind) {
+  const box = $(boxId);
+  if (!url) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="filechip"><a href="' + esc(url) + '" target="_blank" rel="noopener">'
+    + (kind === 'pdf' ? '📄 ' : '📊 ') + esc(name || '附件') + '</a>'
+    + '<button title="移除此附件" onclick="rmAttach(\'' + kind + '\')">✕</button></div>';
+}
+function rmAttach(kind) {
+  if (kind === 'pdf') { rmPdf = true; renderFileBox('pdfBox', null); }
+  else { rmXl = true; renderFileBox('xlBox', null); }
+}
+function ytPreview() {
+  const id = ytId($('f_yt').value);
+  const p = $('ytPrev');
+  if (id) {
+    p.classList.remove('hidden');
+    p.innerHTML = '<iframe src="https://www.youtube.com/embed/' + id + '" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
+  } else { p.classList.add('hidden'); p.innerHTML = ''; }
+}
+$('f_yt').addEventListener('input', ytPreview);
+function closeForm() { $('mw').classList.add('hidden'); editId = null; }
+
+/* ═══ 儲存（先上傳檔案，再存紀錄）═══ */
+async function save() {
+  const doc = $('f_doc').value.trim();
+  if (!doc) { toast('請填文件單號'); $('f_doc').focus(); return; }
+  const btn = $('btnSave');
+  btn.disabled = true; btn.textContent = '處理中…';
+  try {
+    const pdfFile = $('f_pdf').files[0], xlFile = $('f_xl').files[0];
+    let rec = editId ? data.find(x => x.id === editId) : null;
+    if (!rec) rec = { id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: new Date().toISOString() };
+    if (pdfFile) { rec.pdf_url = await uploadFile(pdfFile); rec.pdf_name = pdfFile.name; }
+    if (xlFile) { rec.excel_url = await uploadFile(xlFile); rec.excel_name = xlFile.name; }
+    if (rmPdf) { rec.pdf_url = ''; rec.pdf_name = ''; }
+    if (rmXl) { rec.excel_url = ''; rec.excel_name = ''; }
+    rec.date = $('f_date').value;
+    rec.doc_no = doc;
+    rec.machine_no = $('f_machine').value.trim();
+    rec.customer = $('f_customer').value.trim();
+    rec.category = $('f_category').value.trim();
+    rec.anomaly = $('f_anomaly').value;
+    rec.improvement = $('f_improve').value;
+    rec.youtube = $('f_yt').value.trim();
+    rec.updated = new Date().toISOString();
+    if (!editId) data.unshift(rec);
+    saveLocal(); markDirty(true);
+    closeForm(); render();
+    const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true);
+    toast(ok ? '已儲存並同步雲端' : '已儲存在本機，雲端同步失敗');
+  } catch (e) {
+    toast('儲存失敗：' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '儲存';
+  }
+}
+
+/* ═══ 刪除 ═══ */
+async function del(id) {
+  const r = data.find(x => x.id === id);
+  if (!r) return;
+  if (!confirm('確定刪除「' + (r.doc_no || '') + '」？\n刪除後無法復原（雲端附件檔不會被移除）。')) return;
+  data = data.filter(x => x.id !== id);
+  saveLocal(); markDirty(true); render();
+  const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true);
+  toast(ok ? '已刪除' : '已刪除（本機），雲端同步失敗');
+}
+
+/* ═══ 匯出備份 ═══ */
+function exportJson() {
+  if (!data.length) { toast('目前沒有資料可匯出'); return; }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '產品異常與改進_' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('已匯出 JSON 備份');
+}
+
+loadData();
+</script>
+</body>
+</html>
