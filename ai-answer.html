@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AI 解答</title>
+<style>
+:root{
+  --purple:#6d2ff2; --purple-d:#5323c4; --bg:#f5f6fa; --card:#fff;
+  --txt:#242435; --muted:#8b8fa8; --line:#eceef6; --shadow:0 6px 22px rgba(70,50,160,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,"PingFang TC","PingFang SC","Microsoft JhengHei","Noto Sans TC",sans-serif;
+  background:var(--bg);color:var(--txt);display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.bar{display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(120deg,#6d2ff2,#3f6df5);color:#fff;flex:0 0 auto}
+.bar .t{font-size:17px;font-weight:700}
+.bar .clr{margin-left:auto;font-size:13px;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;color:#fff}
+.msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row.me{flex-direction:row-reverse}
+.bub{max-width:78%;padding:10px 14px;border-radius:16px;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.row.me .bub{background:linear-gradient(120deg,#6d2ff2,#3f6df5);color:#fff;border-bottom-right-radius:4px}
+.row.ai .bub{background:#fff;box-shadow:var(--shadow);border-bottom-left-radius:4px}
+.ico{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:18px;flex:0 0 auto}
+.ico.ai{background:linear-gradient(145deg,#63ecd0,#22b8a0);color:#fff}
+.ico.me{background:linear-gradient(145deg,#ffc46b,#ff8a5c);color:#fff}
+.typing{font-size:13px;color:var(--muted)}
+.input{display:flex;gap:8px;align-items:flex-end;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);flex:0 0 auto}
+.input textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;padding:11px 14px;font-size:15px;max-height:120px;line-height:1.5;outline:none}
+.input textarea:focus{border-color:var(--purple)}
+.input button{width:46px;height:46px;border-radius:14px;background:linear-gradient(120deg,#6d2ff2,#3f6df5);color:#fff;font-size:20px;flex:0 0 auto;display:grid;place-items:center}
+.err{color:#e5484d;font-size:13px;padding:0 14px 8px;flex:0 0 auto}
+</style>
+</head>
+<body>
+<div class="bar"><span class="t">🤖 AI 解答</span><button class="clr" onclick="clearChat()">清除</button></div>
+<div class="msgs" id="msgs"></div>
+<div class="err" id="err"></div>
+<div class="input">
+  <textarea id="ta" rows="1" placeholder="輸入問題，例如：冷鍛是什麼？" onkeydown="onKey(event)"></textarea>
+  <button onclick="send()">↑</button>
+</div>
+<script>
+const msgs=document.getElementById('msgs');
+const ta=document.getElementById('ta');
+const errEl=document.getElementById('err');
+const sys={role:'system',content:'你是忠鍵雲學堂的 AI 助理。'};
+let history=[sys];
+function scrollBottom(){msgs.scrollTop=msgs.scrollHeight;}
+function addRow(who,text){
+  const row=document.createElement('div'); row.className='row '+who;
+  const ico=document.createElement('div'); ico.className='ico '+who; ico.textContent=who==='me'?'🙂':'🤖';
+  const bub=document.createElement('div'); bub.className='bub'; bub.textContent=text;
+  row.appendChild(ico); row.appendChild(bub); msgs.appendChild(row); scrollBottom();
+  return bub;
+}
+function clearChat(){history=[sys];msgs.innerHTML='';errEl.textContent='';}
+function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+async function send(){
+  const text=ta.value.trim(); if(!text) return;
+  ta.value=''; ta.style.height='auto';
+  addRow('me',text);
+  history.push({role:'user',content:text});
+  errEl.textContent='';
+  const bub=addRow('ai','');
+  const typing=document.createElement('div'); typing.className='typing'; typing.textContent='思考中…'; bub.appendChild(typing);
+  let full='';
+  try{
+    const res=await fetch('/api/agnes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history.slice(1)})});
+    if(!res.ok||!res.body){ const t=await res.text().catch(()=>''); throw new Error('HTTP '+res.status+' '+(t||'')); }
+    const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='';
+    while(true){
+      const {done,value}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop()||'';
+      for(const line of lines){
+        const s=line.trim(); if(!s.startsWith('data:')) continue;
+        const p=s.slice(5).trim(); if(!p||p==='[DONE]') continue;
+        try{ const j=JSON.parse(p); const d=j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content; if(typeof d==='string'){ full+=d; } }catch{}
+      }
+      if(typing.parentNode) typing.remove();
+      bub.textContent=full||''; scrollBottom();
+    }
+    if(typing.parentNode) typing.remove();
+    bub.textContent=full||'（無回應）'; scrollBottom();
+    history.push({role:'assistant',content:full});
+  }catch(e){
+    if(typing.parentNode) typing.remove();
+    bub.textContent='⚠️ 發生錯誤：'+(e.message||e);
+    errEl.textContent='請稍後再試，或確認 Agnes 服務是否可用。';
+    scrollBottom();
+  }
+}
+ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px';});
+</script>
+</body>
+</html>

@@ -620,8 +620,8 @@ function openAnomaly() {
   });
 }
 function openAIAnswer() {
-  // AI解答 → 開啟 Agnes AI 智慧助理（Forgewise 工程平台）
-  window.open('https://forgewise-engineering-hub.vercel.app/ai', '_blank');
+  // AI解答 → 站內原生 Agnes（訓練站自己的 /api/agnes 代理，不連 LoyalKey）
+  openApp({ ico: '🤖', name: 'AI解答', file: 'ai-answer.html', sub: 'AI 智慧助理 · 冷鍛/模具/設備/品管解答', back: "goTab('viewHome',0)" });
 }
 
 function openApp(t) {
