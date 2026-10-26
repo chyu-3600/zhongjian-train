@@ -47,6 +47,49 @@ const ta=document.getElementById('ta');
 const errEl=document.getElementById('err');
 const sys={role:'system',content:'你是忠鍵雲學堂的 AI 助理。'};
 let history=[sys];
+
+// ─── 回答前先讀取全部模塊（課程 p1–p6、產品異常與改進、知識庫）───
+const SB_URL='https://rexdmoitodwrtdjsjqvl.supabase.co';
+const SB_ANON='sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
+const SB_KEY='knowledge_base';
+const MODULES=['p1.html','p2.html','p3.html','p4.html','p5.html','p6.html','anomaly.html'];
+var _ctxCache=null,_ctxLoading=null;
+function stripHtmlToText(html){
+  try{
+    var doc=new DOMParser().parseFromString(html,'text/html');
+    var rm=doc.querySelectorAll('script,style,link,meta,nav,header,footer');
+    for(var i=0;i<rm.length;i++){ rm[i].remove(); }
+    var t=(doc.body?doc.body.textContent:doc.documentElement.textContent)||'';
+    return t.replace(/\s+/g,' ').trim();
+  }catch(e){ return ''; }
+}
+async function getModuleText(url){
+  try{
+    var r=await fetch(url,{cache:'force-cache'});
+    if(!r.ok) return '';
+    return stripHtmlToText(await r.text()).slice(0,5000);
+  }catch(e){ return ''; }
+}
+async function getKbText(){
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/tool_storage?key=eq.'+SB_KEY+'&select=data',{headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON}});
+    if(!r.ok) return '';
+    var d=await r.json();
+    if(d&&d[0]&&Array.isArray(d[0].data)) return d[0].data.map(function(e){return '【'+(e.cat||'')+'】'+(e.title||'')+'\n'+(e.content||'');}).join('\n\n');
+  }catch(e){}
+  return '';
+}
+async function buildContext(){
+  if(_ctxCache) return _ctxCache;
+  if(_ctxLoading) return _ctxLoading;
+  _ctxLoading=(async function(){
+    var parts=[];
+    for(var i=0;i<MODULES.length;i++){ var t=await getModuleText(MODULES[i]); if(t) parts.push('【模塊 '+MODULES[i]+'】\n'+t); }
+    var kb=await getKbText(); if(kb) parts.push('【知識庫】\n'+kb);
+    _ctxCache=parts.join('\n\n'); _ctxLoading=null; return _ctxCache;
+  })();
+  return _ctxLoading;
+}
 function scrollBottom(){msgs.scrollTop=msgs.scrollHeight;}
 function addRow(who,text){
   const row=document.createElement('div'); row.className='row '+who;
@@ -64,10 +107,12 @@ async function send(){
   history.push({role:'user',content:text});
   errEl.textContent='';
   const bub=addRow('ai','');
-  const typing=document.createElement('div'); typing.className='typing'; typing.textContent='思考中…'; bub.appendChild(typing);
+  const typing=document.createElement('div'); typing.className='typing'; typing.textContent='讀取模塊資料中…'; bub.appendChild(typing);
   let full='';
   try{
-    const res=await fetch('/api/agnes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history.slice(1)})});
+    const ctx=await buildContext();
+    typing.textContent='思考中…';
+    const res=await fetch('/api/agnes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history.slice(1),context:ctx})});
     if(!res.ok||!res.body){ const t=await res.text().catch(()=>''); throw new Error('HTTP '+res.status+' '+(t||'')); }
     const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='';
     while(true){

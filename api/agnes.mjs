@@ -31,14 +31,20 @@ export default async function handler(req, res) {
     return;
   }
 
-  let raw = '';
+  const chunks = [];
+  let total = 0;
   try {
-    for await (const chunk of req) raw += chunk;
+    for await (const chunk of req) {
+      chunks.push(chunk);
+      total += chunk.length;
+      if (total > 5e6) { req.destroy(); throw new Error('payload too large'); }
+    }
   } catch {
     res.statusCode = 400;
     res.end(JSON.stringify({ error: '讀取請求失敗' }));
     return;
   }
+  const raw = Buffer.concat(chunks).toString('utf8');
 
   let payload;
   try {
@@ -50,7 +56,9 @@ export default async function handler(req, res) {
   }
 
   const incoming = Array.isArray(payload.messages) ? payload.messages : [];
-  const messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...incoming];
+  const ctx = typeof payload.context === 'string' && payload.context.trim() ? payload.context.trim() : '';
+  const systemContent = SYSTEM_PROMPT + (ctx ? '\n\n【忠鍵平台模塊資料（回答時務必優先以此為依據，並可引用其中內容）】\n' + ctx : '');
+  const messages = [{ role: 'system', content: systemContent }, ...incoming];
 
   let upstream;
   try {
