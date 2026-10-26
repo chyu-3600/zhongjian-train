@@ -75,7 +75,12 @@ async function getKbText(){
     var r=await fetch(SB_URL+'/rest/v1/tool_storage?key=eq.'+SB_KEY+'&select=data',{headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON}});
     if(!r.ok) return '';
     var d=await r.json();
-    if(d&&d[0]&&Array.isArray(d[0].data)) return d[0].data.map(function(e){return '【'+(e.cat||'')+'】'+(e.title||'')+'\n'+(e.content||'');}).join('\n\n');
+    if(d&&d[0]&&Array.isArray(d[0].data)){
+      var txt=d[0].data.map(function(e){return '【'+(e.cat||'')+'】'+(e.q||'')+'\n'+(e.a||'');}).join('\n\n');
+      // 清掉 HTML 標籤／script／style，避免把整頁 HTML 塞進提示詞
+      txt=txt.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ');
+      return txt.replace(/\s+/g,' ').trim();
+    }
   }catch(e){}
   return '';
 }
