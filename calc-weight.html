@@ -1,0 +1,288 @@
+﻿<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>忠鍵圓重量計算</title>
+<script>
+(function(){
+  try {
+    if (localStorage.getItem('mw_theme') === 'dark') document.documentElement.classList.add('dark');
+    var fs = localStorage.getItem('mw_fs');
+    if (fs) document.documentElement.style.setProperty('--fs', fs + 'px');
+  } catch(e){}
+})();
+</script>
+<style>
+:root {
+  --fs: 16px;
+  --bg: #eef2f7;
+  --card: #ffffff;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --accent: #2563eb;
+  --input-bg: #f8fafc;
+  --shadow: 0 8px 32px rgba(0,0,0,0.08);
+  --chip-bg: #eef2f7;
+  --chip-active: #2563eb;
+  --chip-text: #334155;
+  --chip-active-text: #fff;
+  --info-bg: #f8fafc;
+}
+html.dark {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #334155;
+  --accent: #3b82f6;
+  --input-bg: #0f172a;
+  --shadow: 0 8px 32px rgba(0,0,0,0.45);
+  --chip-bg: #334155;
+  --chip-active: #3b82f6;
+  --chip-text: #cbd5e1;
+  --chip-active-text: #fff;
+  --info-bg: #0f172a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI','Microsoft JhengHei',system-ui,sans-serif;
+  font-size: var(--fs);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex; justify-content: center; align-items: center;
+  padding: 20px;
+  transition: background .3s, color .3s;
+}
+.card {
+  width: 100%; max-width: 460px;
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 1.8em;
+  transition: background .3s, box-shadow .3s;
+}
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5em; }
+.header h1 { font-size:1.35em; font-weight:700; }
+.tools { display:flex; gap:.5em; }
+.tool-btn {
+  min-width:2.4em; height:2.4em; padding:0 .6em;
+  border-radius:.8em; border:1px solid var(--border);
+  background:var(--input-bg); color:var(--text);
+  font-size:.85em; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition: all .2s;
+}
+.tool-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.label { font-size:.8em; color:var(--muted); font-weight:600; margin-bottom:.5em; display:block; }
+.chips { display:flex; gap:.5em; flex-wrap:wrap; margin-bottom:1.2em; }
+.chip {
+  padding:.55em 1em; border-radius:2em; background:var(--chip-bg);
+  color:var(--chip-text); border:1px solid transparent;
+  font-size:.85em; cursor:pointer; transition:all .2s; font-weight:500;
+}
+.chip:hover { border-color:var(--accent); }
+.chip.active { background:var(--chip-active); color:var(--chip-active-text); border-color:var(--chip-active); }
+select {
+  width:100%; padding:.7em 1em; border-radius:.8em;
+  border:1px solid var(--border); background:var(--input-bg);
+  color:var(--text); font-size:.9em; cursor:pointer;
+  margin-bottom:1.2em; appearance:none;
+}
+.input-group { margin-bottom:1em; }
+.input-wrap { position:relative; }
+.input-wrap input {
+  width:100%; padding:.75em 4em .75em 1em;
+  border-radius:.8em; border:1px solid var(--border);
+  background:var(--input-bg); color:var(--text);
+  font-size:1em; font-weight:600; outline:none;
+  transition:border .2s, box-shadow .2s;
+  font-variant-numeric:tabular-nums;
+}
+.input-wrap input:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(37,99,235,.15);
+}
+.unit {
+  position:absolute; right:.9em; top:50%; transform:translateY(-50%);
+  font-size:.7em; color:var(--muted); font-weight:600; pointer-events:none;
+}
+.formula {
+  margin-top:1.3em; padding:1em; background:var(--info-bg);
+  border:1px dashed var(--border); border-radius:.8em;
+  font-size:.75em; color:var(--muted); text-align:center; line-height:1.7;
+}
+.formula b { color:var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <h1>🔩 忠鍵圓重量計算</h1>
+    <div class="tools">
+      <button class="tool-btn" id="btnAa" title="調整字號">Aa</button>
+      <button class="tool-btn" id="btnTheme" title="日夜切換">🌙</button>
+    </div>
+  </div>
+
+  <label class="label">材質</label>
+  <div class="chips" id="materialChips">
+    <button class="chip active" data-mat="carbon_steel">一般碳鋼</button>
+    <button class="chip" data-mat="titanium">鈦</button>
+    <button class="chip" data-mat="aluminum">鋁</button>
+    <button class="chip" data-mat="copper">銅</button>
+    <button class="chip" data-mat="tungsten">鎢鋼</button>
+  </div>
+
+  <label class="label">外形</label>
+  <select id="shape">
+    <option value="round">圓形（圓棒）</option>
+    <option value="round" disabled>圓管（待開發）</option>
+    <option value="square" disabled>方管（待開發）</option>
+  </select>
+
+  <div class="input-group">
+    <label class="label">外徑（D）</label>
+    <div class="input-wrap">
+      <input type="number" id="d" placeholder="輸入外徑" data-field="d" step="any" inputmode="decimal">
+      <span class="unit">mm</span>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label class="label">重量（W）</label>
+    <div class="input-wrap">
+      <input type="number" id="w" placeholder="輸入重量" data-field="w" step="any" inputmode="decimal">
+      <span class="unit">g</span>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label class="label">長度（L）</label>
+    <div class="input-wrap">
+      <input type="number" id="l" placeholder="輸入長度" data-field="l" step="any" inputmode="decimal">
+      <span class="unit">mm</span>
+    </div>
+  </div>
+
+  <div class="formula">
+    公式：<b>W = π × D² × L × ρ ÷ 4000</b><br>
+    W=重量(g)　D=外徑(mm)　L=長度(mm)　ρ=密度(g/cm³)<br>
+    輸入任意兩個數值，自動計算第三個
+  </div>
+</div>
+
+<script>
+const DENSITY = {
+  carbon_steel: 7.85,
+  titanium:     4.51,
+  aluminum:     2.70,
+  copper:       8.96,
+  tungsten:    14.60,
+};
+
+let currentMat = 'carbon_steel';
+let lastEdit = { d: 0, w: 0, l: 0 };
+
+const dInput = document.getElementById('d');
+const wInput = document.getElementById('w');
+const lInput = document.getElementById('l');
+const fields = { d: dInput, w: wInput, l: lInput };
+
+const getVal = el => {
+  const v = parseFloat(el.value);
+  return isNaN(v) ? null : v;
+};
+
+function fmt(v, field) {
+  if (field === 'w') return v.toFixed(3);
+  if (v >= 1000) return v.toFixed(1);
+  if (v >= 100)  return v.toFixed(2);
+  if (v >= 1)    return v.toFixed(3);
+  return v.toPrecision(4);
+}
+
+function computeAndFill(d, w, l, missing) {
+  const rho = DENSITY[currentMat];
+  let v;
+  if (missing === 'w') {
+    v = Math.PI * d * d * l * rho / 4000;
+  } else if (missing === 'd') {
+    v = Math.sqrt(w * 4000 / (Math.PI * l * rho));
+  } else if (missing === 'l') {
+    v = w * 4000 / (Math.PI * d * d * rho);
+  } else return;
+  fields[missing].value = fmt(v, missing);
+}
+
+function recalc() {
+  const d = getVal(dInput);
+  const w = getVal(wInput);
+  const l = getVal(lInput);
+
+  const filled = [];
+  if (d !== null) filled.push('d');
+  if (w !== null) filled.push('w');
+  if (l !== null) filled.push('l');
+
+  if (filled.length === 2) {
+    const missing = ['d','w','l'].find(k => !filled.includes(k));
+    computeAndFill(d, w, l, missing);
+  } else if (filled.length === 3) {
+    const sorted = [...filled].sort((a,b) => lastEdit[b] - lastEdit[a]);
+    const [a1, a2, target] = sorted;
+    const vals = { d, w, l, [target]: null };
+    computeAndFill(vals.d, vals.w, vals.l, target);
+  }
+}
+
+['d','w','l'].forEach(k => {
+  fields[k].addEventListener('input', e => {
+    if (e.target.value.trim() === '') {
+      lastEdit[k] = Date.now();
+      return;
+    }
+    lastEdit[k] = Date.now();
+    recalc();
+  });
+});
+
+document.getElementById('materialChips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  currentMat = chip.dataset.mat;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === chip));
+  const d = getVal(dInput), l = getVal(lInput);
+  if (d !== null && l !== null) {
+    wInput.value = fmt(Math.PI * d * d * l * DENSITY[currentMat] / 4000, 'w');
+  }
+});
+
+const btnTheme = document.getElementById('btnTheme');
+function applyTheme() {
+  const dark = document.documentElement.classList.contains('dark');
+  btnTheme.textContent = dark ? '☀️' : '🌙';
+}
+btnTheme.addEventListener('click', () => {
+  document.documentElement.classList.toggle('dark');
+  localStorage.setItem('mw_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  applyTheme();
+});
+applyTheme();
+
+const btnAa = document.getElementById('btnAa');
+const FS_STEPS = [14, 16, 18, 20, 22];
+let fsIdx = FS_STEPS.indexOf(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--fs'))) ;
+if (fsIdx < 0) fsIdx = 1;
+btnAa.addEventListener('click', () => {
+  fsIdx = (fsIdx + 1) % FS_STEPS.length;
+  document.documentElement.style.setProperty('--fs', FS_STEPS[fsIdx] + 'px');
+  localStorage.setItem('mw_fs', FS_STEPS[fsIdx]);
+  btnAa.textContent = 'Aa ' + FS_STEPS[fsIdx];
+  setTimeout(() => btnAa.textContent = 'Aa', 800);
+});
+</script>
+</body>
+</html>
