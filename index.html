@@ -360,11 +360,21 @@ const CAT_EMO = { '安全訓練': '🦺', '機台操作': '🔧', '冷鍛工藝'
 const CAT_CLS = { '安全訓練': 'g-red', '機台操作': 'g-cyan', '冷鍛工藝': 'g-orange', '品質管理': 'g-green', '知識庫': 'g-teal', '其他': 'g-pink' };
 const CAT_GRID = [{ name: '全部', ico: 'icons/all.png', cls: 'g-blue' },
   ...CATS.map(c => ({ name: c, ico: CAT_ICO[c], cls: CAT_CLS[c],
-    ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachineMenu()' } : {}) })),
+    ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachineMenu()' } : c === '品質管理' ? { act: 'openQualityMenu()' } : {}) })),
   { name: '計算公式', ico: 'icons/calc.png', cls: 'g-amber', act: 'openCalc()' },
   { name: '問題反饋', ico: 'icons/feedback.png', cls: 'g-pink', act: 'openFeedback()' },
   { name: '產品異常與改進', ico: 'icons/quality.png', cls: 'g-red', act: 'openAnomaly()' },
-  { name: 'AI解答', ico: '🤖', cls: 'g-teal', act: 'openAIAnswer()' }];
+  { name: 'AI解答', ico: '🤖', cls: 'g-teal', act: 'openAIAnswer()' },
+  { name: '故障查詢與排除', ico: '🛠️', cls: 'g-orange', act: 'openFaultQuery()' }];
+
+// 品質管理：子選單（新增項目 → 在此加一列 { name, ico, cls, file, sub, back }，再把 HTML 檔放 repo 根目錄）
+const QUALITY = [
+  { name: '檢查方式', ico: 'icons/quality.png', cls: 'g-green', file: 'qc-method.html', sub: '檢查方式與標準（待建立內容）', back: "openQualityMenu()" },
+  { name: 'PDF 相關', ico: 'icons/knowledge.png', cls: 'g-blue', file: 'qc-pdf.html', sub: 'PDF 文件相關（待建立內容）', back: "openQualityMenu()" },
+  { name: '客戶圖紙', ico: 'icons/mold.png', cls: 'g-cyan', file: 'qc-drawing.html', sub: '客戶圖紙管理（待建立內容）', back: "openQualityMenu()" },
+  { name: '客訴產品追溯', ico: 'icons/feedback.png', cls: 'g-red', file: 'qc-trace.html', sub: '客訴產品追溯（待建立內容）', back: "openQualityMenu()" },
+  { name: '品質檢驗基礎', ico: 'icons/safety.png', cls: 'g-amber', file: '', cat: '品質管理', sub: '原有品質管理課程（回課程列表）', back: "openQualityMenu()" },
+];
 
 const TOOLS = [
   { name: '工作備忘錄', ico: 'icons/memo.png', cls: 'g-pink', file: 'notebook/index.html', sub: '自訂分類 · 圖片/PDF 附檔 · 日夜切換（筆記資料獨立儲存，不影響課程與訓練記錄）' },
@@ -589,6 +599,7 @@ function fitCalc() {
 function setCat(name) { curCat = name; renderCats(); renderCourses(); }
 function openTools() { renderToolMenu('其他', '實用小工具 · 點選要使用的工具', TOOLS); }
 function openMachineMenu() { renderToolMenu('機台操作', '機台課程 · 點選要學習的機台', MACHINES); }
+function openQualityMenu() { renderToolMenu('品質管理', '品質管理工具 · 點選要使用的功能', QUALITY); }
 function renderToolMenu(title, sub, list) {
   $('toolsName').textContent = title;
   $('toolsSub').textContent = sub;
@@ -603,6 +614,7 @@ function openTool(i) { openApp(TOOLS[i]); }
 function openToolItem(i) {
   const t = window._toolList[i];
   if (t.url) { window.open(t.url, '_blank'); return; }
+  if (t.cat) { setCat(t.cat); go('viewHome', document.querySelectorAll('#tabbar button')[0]); return; }
   openApp(t);
 }
 function openKB() {
@@ -637,6 +649,23 @@ function openAnomaly() {
 function openAIAnswer() {
   // AI解答 → 站內原生 Agnes（訓練站自己的 /api/agnes 代理，不連 LoyalKey）
   openApp({ ico: '🤖', name: 'AI解答', file: 'ai-answer.html', sub: 'AI 智慧助理 · 冷鍛/模具/設備/品管解答', back: "goTab('viewHome',0)" });
+}
+function openFaultQuery() {
+  // 故障查詢與排除 → 專屬登入閘門（只有這張卡片觸發，不影響其他卡片／tr_sess）
+  // 子頁跨域呼叫冷鍛知識庫 RAG（/api/chat, SSE）；不可指向本站 /api/chat（Agnes 非串流代理）
+  var authed = false;
+  try {
+    var t = Number(sessionStorage.getItem('fq_auth') || 0);
+    var d = Date.now() - t;
+    authed = t > 0 && d >= -60000 && d < 8 * 60 * 60 * 1000;
+  } catch (e) { authed = false; }
+  openApp({
+    ico: '🛠️', name: '故障查詢與排除',
+    file: authed ? 'fault-query/index.html' : 'fault-query/login.html',
+    sub: authed ? '輸入異常現象，檢索知識庫後整理可能原因與排除建議'
+                : '請先以管理員帳號登入，再進行故障查詢',
+    back: "goTab('viewHome',0)",
+  });
 }
 
 function openApp(t) {
