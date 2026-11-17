@@ -360,7 +360,7 @@ const CAT_EMO = { '安全訓練': '🦺', '機台操作': '🔧', '冷鍛工藝'
 const CAT_CLS = { '安全訓練': 'g-red', '機台操作': 'g-cyan', '冷鍛工藝': 'g-orange', '品質管理': 'g-green', '知識庫': 'g-teal', '其他': 'g-pink' };
 const CAT_GRID = [{ name: '全部', ico: 'icons/all.png', cls: 'g-blue' },
   ...CATS.map(c => ({ name: c, ico: CAT_ICO[c], cls: CAT_CLS[c],
-    ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachineMenu()' } : c === '品質管理' ? { act: 'openQualityMenu()' } : {}) })),
+    ...(c === '其他' ? { act: 'openTools()' } : c === '知識庫' ? { act: 'openKB()' } : c === '機台操作' ? { act: 'openMachineMenu()' } : c === '品質管理' ? { act: 'openQualityMenu()' } : c === '安全訓練' ? { act: 'openSafetyMenu()' } : {}) })),
   { name: '計算公式', ico: 'icons/calc.png', cls: 'g-amber', act: 'openCalc()' },
   { name: '問題反饋', ico: 'icons/feedback.png', cls: 'g-pink', act: 'openFeedback()' },
   { name: '產品異常與改進', ico: 'icons/quality.png', cls: 'g-red', act: 'openAnomaly()' },
@@ -374,6 +374,17 @@ const QUALITY = [
   { name: '客戶圖紙', ico: 'icons/mold.png', cls: 'g-cyan', file: 'qc-drawing.html', sub: '客戶圖紙管理（待建立內容）', back: "openQualityMenu()" },
   { name: '客訴產品追溯', ico: 'icons/feedback.png', cls: 'g-red', file: 'qc-trace.html', sub: '客訴產品追溯（待建立內容）', back: "openQualityMenu()" },
   { name: '品質檢驗基礎', ico: 'icons/safety.png', cls: 'g-amber', file: '', cat: '品質管理', sub: '原有品質管理課程（回課程列表）', back: "openQualityMenu()" },
+];
+
+// 安全訓練：子選單（新增項目 → 在此加一列 { name, ico, cls, file, sub, back }，再把 HTML 檔放 repo 根目錄）
+const SAFETY = [
+  { name: '車床操作', ico: 'icons/machine.png', cls: 'g-cyan', file: 'safety-lathe.html', sub: '車床操作安全（待建立內容）', back: "openSafetyMenu()" },
+  { name: '砂輪操作', ico: 'icons/forge.png', cls: 'g-amber', file: 'safety-wheel.html', sub: '砂輪操作安全（待建立內容）', back: "openSafetyMenu()" },
+  { name: '洗床操作', ico: 'icons/machine.png', cls: 'g-blue', file: 'safety-washer.html', sub: '洗床操作安全（待建立內容）', back: "openSafetyMenu()" },
+  { name: '天車操作', ico: 'icons/other.png', cls: 'g-orange', file: 'safety-crane.html', sub: '天車操作安全（待建立內容）', back: "openSafetyMenu()" },
+  { name: '推高機操作', ico: 'icons/other.png', cls: 'g-red', file: 'safety-forklift.html', sub: '推高機操作安全（待建立內容）', back: "openSafetyMenu()" },
+  { name: '磨床操作', ico: 'icons/forge.png', cls: 'g-teal', file: 'safety-grinder.html', sub: '磨床操作安全（待建立內容）', back: "openSafetyMenu()" },
+  { name: '廠區安全總則', ico: 'icons/safety.png', cls: 'g-pink', file: '', cat: '安全訓練', sub: '原有安全訓練課程（回課程列表）', back: "openSafetyMenu()" },
 ];
 
 const TOOLS = [
@@ -600,6 +611,7 @@ function setCat(name) { curCat = name; renderCats(); renderCourses(); }
 function openTools() { renderToolMenu('其他', '實用小工具 · 點選要使用的工具', TOOLS); }
 function openMachineMenu() { renderToolMenu('機台操作', '機台課程 · 點選要學習的機台', MACHINES); }
 function openQualityMenu() { renderToolMenu('品質管理', '品質管理工具 · 點選要使用的功能', QUALITY); }
+function openSafetyMenu() { renderToolMenu('安全訓練', '安全訓練 · 點選要學習的操作安全', SAFETY); }
 function renderToolMenu(title, sub, list) {
   $('toolsName').textContent = title;
   $('toolsSub').textContent = sub;
