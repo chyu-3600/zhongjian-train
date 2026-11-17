@@ -71,6 +71,12 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 .tag-btn{padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--fg2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .tag-btn:hover{border-color:var(--accent);color:var(--accent)}
 .tag-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tag-btn.editing{padding-right:6px}
+.tag-x{margin-left:6px;color:var(--accent);font-size:11px;font-weight:900}
+.tag-tools{margin:2px 0 4px}
+.cat-manager{margin:6px 0 4px;padding:10px;border:1px dashed var(--border);border-radius:10px;background:var(--accent-dim)}
+.cat-manager input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:13px;font-family:inherit;outline:none}
+.cat-mgr-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .filechip{display:flex;align-items:center;gap:8px;background:var(--accent-dim);border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:8px}
 .filechip a{color:var(--accent);font-weight:700;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filechip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px}
@@ -124,6 +130,16 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
     <input id="f_customer" placeholder="例：XX 精密工業" maxlength="80">
     <label>產品類別（點標籤快速帶入，或自行輸入）</label>
     <div class="tag-btns" id="catTags"></div>
+    <div class="tag-tools"><button type="button" class="mini" id="catMgrBtn" onclick="toggleCatMgr()">✎ 管理類別</button></div>
+    <div class="cat-manager hidden" id="catMgr">
+      <input id="newCat" placeholder="輸入新類別名稱，按 Enter 加入" maxlength="30" onkeydown="if(event.key==='Enter'){addCat();event.preventDefault();}">
+      <div class="cat-mgr-btns">
+        <button type="button" class="mini" onclick="addCat()">＋ 加入</button>
+        <button type="button" class="mini" onclick="resetCats()">↺ 還原預設</button>
+        <button type="button" class="mini" onclick="toggleCatMgr()">收起</button>
+      </div>
+      <div class="filehint">管理模式下每個標籤會出現 ✕，點它即可刪除。類別存於本瀏覽器。</div>
+    </div>
     <input id="f_category" list="catList" placeholder="例：螺栓" maxlength="60">
     <datalist id="catList">
       <option value="螺栓"></option><option value="螺帽"></option><option value="墊片"></option>
@@ -158,10 +174,17 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 const SB_URL = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
 const SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
 const SB_KEY = 'product_anomaly';
-const LS_DATA = 'anomalyData', LS_DIRTY = 'anomalyDirty', LS_THEME = 'anomaly-theme';
-const CATS = ['螺栓', '螺帽', '墊片', '扣件', '鍛造件', '車削件', '沖壓件', '其他'];
+const LS_DATA = 'anomalyData', LS_DIRTY = 'anomalyDirty', LS_THEME = 'anomaly-theme', LS_CATS = 'anomalyCats';
+const DEFAULT_CATS = ['螺栓', '螺帽', '墊片', '扣件', '鍛造件', '車削件', '沖壓件', '其他'];
 
-let data = [], kw = '', editId = null, rmPdf = false, rmXl = false;
+function loadCats() {
+  try { const v = JSON.parse(localStorage.getItem(LS_CATS) || 'null'); if (Array.isArray(v) && v.length) return v; }
+  catch (e) { }
+  return DEFAULT_CATS.slice();
+}
+let CATS = loadCats();
+
+let data = [], kw = '', editId = null, rmPdf = false, rmXl = false, catMgrOn = false;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -266,12 +289,20 @@ async function uploadFile(file) {
   return SB_URL + '/storage/v1/object/public/media/' + path;
 }
 
-/* ═══ 類別標籤按鈕（點一下帶入，再點一次取消）═══ */
+/* ═══ 類別標籤按鈕（點一下帶入，再點一次取消；管理模式可增刪）═══ */
 function renderCatTags() {
   $('catTags').innerHTML = CATS.map(function (c) {
-    return '<button type="button" class="tag-btn" data-cat="' + esc(c) + '" onclick="pickCat(\'' + c + '\')">' + esc(c) + '</button>';
+    const x = catMgrOn ? '<span class="tag-x" data-del="' + esc(c) + '" title="刪除類別">✕</span>' : '';
+    return '<button type="button" class="tag-btn' + (catMgrOn ? ' editing' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + x + '</button>';
   }).join('');
+  $('catList').innerHTML = CATS.map(function (c) { return '<option value="' + esc(c) + '"></option>'; }).join('');
 }
+$('catTags').addEventListener('click', function (e) {
+  const del = e.target.getAttribute && e.target.getAttribute('data-del');
+  if (del !== null && del !== undefined) { delCat(del); return; }
+  const btn = e.target.closest ? e.target.closest('.tag-btn') : null;
+  if (btn) { if (catMgrOn) return; pickCat(btn.getAttribute('data-cat')); }
+});
 function syncCatTags() {
   const v = $('f_category').value.trim();
   const btns = $('catTags').querySelectorAll('.tag-btn');
@@ -281,6 +312,32 @@ function pickCat(c) {
   const inp = $('f_category');
   inp.value = (inp.value.trim() === c) ? '' : c;
   syncCatTags();
+}
+function toggleCatMgr() {
+  catMgrOn = !catMgrOn;
+  $('catMgr').classList.toggle('hidden', !catMgrOn);
+  $('catMgrBtn').textContent = catMgrOn ? '✕ 結束管理' : '✎ 管理類別';
+  renderCatTags(); syncCatTags();
+  if (catMgrOn) $('newCat').focus();
+}
+function addCat() {
+  const inp = $('newCat'), v = inp.value.trim();
+  if (!v) { toast('請輸入類別名稱'); inp.focus(); return; }
+  if (CATS.indexOf(v) >= 0) { toast('類別已存在'); return; }
+  CATS.push(v);
+  localStorage.setItem(LS_CATS, JSON.stringify(CATS));
+  inp.value = ''; renderCatTags(); syncCatTags(); toast('已新增類別：' + v);
+}
+function delCat(c) {
+  CATS = CATS.filter(function (x) { return x !== c; });
+  localStorage.setItem(LS_CATS, JSON.stringify(CATS));
+  if ($('f_category').value.trim() === c) $('f_category').value = '';
+  renderCatTags(); syncCatTags(); toast('已刪除類別：' + c);
+}
+function resetCats() {
+  CATS = DEFAULT_CATS.slice();
+  localStorage.setItem(LS_CATS, JSON.stringify(CATS));
+  renderCatTags(); syncCatTags(); toast('已還原預設類別');
 }
 $('f_category').addEventListener('input', syncCatTags);
 renderCatTags();
