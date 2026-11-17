@@ -67,6 +67,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 .modal input:focus,.modal textarea:focus{border-color:var(--accent)}
 .modal textarea{resize:vertical;line-height:1.6;min-height:70px}
 .modal input[type=file]{padding:7px;font-size:12px}
+.tag-btns{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
+.tag-btn{padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--fg2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.tag-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tag-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .filechip{display:flex;align-items:center;gap:8px;background:var(--accent-dim);border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:8px}
 .filechip a{color:var(--accent);font-weight:700;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filechip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px}
@@ -95,7 +99,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 
   <div class="tb">
     <button class="btn primary" onclick="openForm()">＋ 新增記錄</button>
-    <input class="search" id="kw" placeholder="搜尋單號／機台／客戶／類別／內容…" oninput="kw=this.value;render()">
+    <input class="search" id="kw" placeholder="搜尋標題／單號／機台／客戶／類別／內容…" oninput="kw=this.value;render()">
     <button class="btn" onclick="exportJson()" title="匯出 JSON 備份">匯出備份</button>
   </div>
 
@@ -108,15 +112,18 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 <div class="mw hidden" id="mw" onclick="if(event.target===this)closeForm()">
   <div class="modal">
     <h3 id="formTitle">新增記錄</h3>
+    <label>標題 *</label>
+    <input id="f_title" placeholder="例：P4 入料異常——螺帽頭部裂紋" maxlength="120">
     <label>日期</label>
     <input id="f_date" type="date">
-    <label>文件單號 *</label>
+    <label>文件單號</label>
     <input id="f_doc" placeholder="例：PA-2026-001" maxlength="60">
     <label>機台編號</label>
     <input id="f_machine" placeholder="例：CF-200" maxlength="60">
     <label>客戶名稱</label>
     <input id="f_customer" placeholder="例：XX 精密工業" maxlength="80">
-    <label>產品類別</label>
+    <label>產品類別（點標籤快速帶入，或自行輸入）</label>
+    <div class="tag-btns" id="catTags"></div>
     <input id="f_category" list="catList" placeholder="例：螺栓" maxlength="60">
     <datalist id="catList">
       <option value="螺栓"></option><option value="螺帽"></option><option value="墊片"></option>
@@ -152,6 +159,7 @@ const SB_URL = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
 const SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
 const SB_KEY = 'product_anomaly';
 const LS_DATA = 'anomalyData', LS_DIRTY = 'anomalyDirty', LS_THEME = 'anomaly-theme';
+const CATS = ['螺栓', '螺帽', '墊片', '扣件', '鍛造件', '車削件', '沖壓件', '其他'];
 
 let data = [], kw = '', editId = null, rmPdf = false, rmXl = false;
 
@@ -258,11 +266,30 @@ async function uploadFile(file) {
   return SB_URL + '/storage/v1/object/public/media/' + path;
 }
 
+/* ═══ 類別標籤按鈕（點一下帶入，再點一次取消）═══ */
+function renderCatTags() {
+  $('catTags').innerHTML = CATS.map(function (c) {
+    return '<button type="button" class="tag-btn" data-cat="' + esc(c) + '" onclick="pickCat(\'' + c + '\')">' + esc(c) + '</button>';
+  }).join('');
+}
+function syncCatTags() {
+  const v = $('f_category').value.trim();
+  const btns = $('catTags').querySelectorAll('.tag-btn');
+  for (let i = 0; i < btns.length; i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-cat') === v);
+}
+function pickCat(c) {
+  const inp = $('f_category');
+  inp.value = (inp.value.trim() === c) ? '' : c;
+  syncCatTags();
+}
+$('f_category').addEventListener('input', syncCatTags);
+renderCatTags();
+
 /* ═══ 渲染 ═══ */
 function render() {
   const k = kw.trim().toLowerCase();
   const sorted = [...data].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.created || '').localeCompare(String(a.created || '')));
-  const list = k ? sorted.filter(r => [r.date, r.doc_no, r.machine_no, r.customer, r.category, r.anomaly, r.improvement]
+  const list = k ? sorted.filter(r => [r.title, r.date, r.doc_no, r.machine_no, r.customer, r.category, r.anomaly, r.improvement]
     .join(' ').toLowerCase().includes(k)) : sorted;
   $('empty').classList.toggle('hidden', list.length > 0);
   $('list').innerHTML = list.map(card).join('');
@@ -270,13 +297,14 @@ function render() {
 function card(r) {
   const yt = ytId(r.youtube);
   return '<div class="rc">'
-    + '<div class="rc-hd"><span class="doc">' + esc(r.doc_no || '（未命名）') + '</span>'
+    + '<div class="rc-hd"><span class="doc">' + esc(r.title || r.doc_no || '（未命名）') + '</span>'
     + '<span class="ops">'
     + '<button class="mini" onclick="openForm(\'' + r.id + '\')">編輯</button>'
     + '<button class="mini del" onclick="del(\'' + r.id + '\')">刪除</button>'
     + '</span></div>'
     + '<div class="rc-meta">'
     + (r.date ? '<span>📅 ' + esc(r.date) + '</span>' : '')
+    + (r.title && r.doc_no ? '<span>📄 ' + esc(r.doc_no) + '</span>' : '')
     + (r.machine_no ? '<span>🔧 ' + esc(r.machine_no) + '</span>' : '')
     + (r.customer ? '<span>🏭 ' + esc(r.customer) + '</span>' : '')
     + (r.category ? '<span>📦 ' + esc(r.category) + '</span>' : '')
@@ -300,6 +328,7 @@ function openForm(id) {
   editId = id || null; rmPdf = false; rmXl = false;
   const r = id ? data.find(x => x.id === id) : null;
   $('formTitle').textContent = r ? '編輯記錄' : '新增記錄';
+  $('f_title').value = r ? (r.title || '') : '';
   $('f_date').value = r ? (r.date || '') : today();
   $('f_doc').value = r ? (r.doc_no || '') : '';
   $('f_machine').value = r ? (r.machine_no || '') : '';
@@ -311,9 +340,10 @@ function openForm(id) {
   $('f_pdf').value = ''; $('f_xl').value = '';
   renderFileBox('pdfBox', r && r.pdf_url, r && r.pdf_name, 'pdf');
   renderFileBox('xlBox', r && r.excel_url, r && r.excel_name, 'xl');
+  syncCatTags();
   ytPreview();
   $('mw').classList.remove('hidden');
-  if (window.innerWidth >= 640) $('f_doc').focus();
+  if (window.innerWidth >= 640) $('f_title').focus();
 }
 function renderFileBox(boxId, url, name, kind) {
   const box = $(boxId);
@@ -339,8 +369,9 @@ function closeForm() { $('mw').classList.add('hidden'); editId = null; }
 
 /* ═══ 儲存（先上傳檔案，再存紀錄）═══ */
 async function save() {
+  const title = $('f_title').value.trim();
   const doc = $('f_doc').value.trim();
-  if (!doc) { toast('請填文件單號'); $('f_doc').focus(); return; }
+  if (!title) { toast('請填標題'); $('f_title').focus(); return; }
   const btn = $('btnSave');
   btn.disabled = true; btn.textContent = '處理中…';
   try {
@@ -352,6 +383,7 @@ async function save() {
     if (rmPdf) { rec.pdf_url = ''; rec.pdf_name = ''; }
     if (rmXl) { rec.excel_url = ''; rec.excel_name = ''; }
     rec.date = $('f_date').value;
+    rec.title = title;
     rec.doc_no = doc;
     rec.machine_no = $('f_machine').value.trim();
     rec.customer = $('f_customer').value.trim();
@@ -376,7 +408,7 @@ async function save() {
 async function del(id) {
   const r = data.find(x => x.id === id);
   if (!r) return;
-  if (!confirm('確定刪除「' + (r.doc_no || '') + '」？\n刪除後無法復原（雲端附件檔不會被移除）。')) return;
+  if (!confirm('確定刪除「' + (r.title || r.doc_no || '') + '」？\n刪除後無法復原（雲端附件檔不會被移除）。')) return;
   data = data.filter(x => x.id !== id);
   saveLocal(); markDirty(true); render();
   const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true);
