@@ -99,7 +99,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
     <div class="hl">
       <div class="ic">⚠️</div>
       <div>
-        <div class="ht">產品異常與改進 <span style="font-size:10px;color:var(--accent);vertical-align:middle">v20261118-P1</span></div>
+        <div class="ht">產品異常與改進 <span style="font-size:10px;color:var(--accent);vertical-align:middle">v20261118-P2</span></div>
         <div class="hs" id="sync">載入中…</div>
       </div>
     </div>
@@ -118,7 +118,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 
   <div id="list"></div>
   <div class="empty hidden" id="empty">尚無記錄，按「＋ 新增記錄」建立第一筆</div>
-  <div class="footer">產品異常與改進 · PDF／Excel 存雲端 · 跨裝置自動同步 · <span style="color:var(--accent);font-weight:700">v20261118-P1</span></div>
+  <div class="footer">產品異常與改進 · PDF／Excel 存雲端 · 跨裝置自動同步 · <span style="color:var(--accent);font-weight:700">v20261118-P2</span></div>
 </div>
 
 <div class="mw hidden" id="mw" onclick="if(event.target===this)closeForm()">
@@ -173,7 +173,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   產品異常與改進  v20261118-P1
+   產品異常與改進  v20261118-P2
    規範：純 ES5（var / function / XMLHttpRequest）
         不用 fetch、不用箭頭函式、不用 async/await、不用 Promise
         → 舊 Android WebView 也能跑
@@ -183,10 +183,12 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 
 var SB_URL  = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
 var SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
-var SB_KEY  = 'anomaly_v2';                 /* 新的雲端 key，舊資料不再讀取 */
+var SB_KEY  = 'anomaly_v2';                 /* 記錄：新的雲端 key，舊資料不再讀取 */
+var SB_CATS = 'anomaly_cats';               /* 類別標籤：也存雲端，跨裝置共用 */
 var LS_DATA = 'anomaly2_data';
 var LS_THEME = 'anomaly2_theme';
 var LS_CATS = 'anomaly2_cats';
+var LS_CATS_DEL = 'anomaly2_cats_del';
 var DEFAULT_CATS = ['螺栓','螺帽','墊片','扣件','鍛造件','車削件','沖壓件','其他'];
 
 var data = [];
@@ -197,6 +199,7 @@ var rmXl = false;
 var catMgrOn = false;
 var syncing = false;
 var CATS = [];
+var CATS_DEL = [];        /* 已刪除的類別名（墓碑），讓刪除也能傳到別台 */
 
 /* ═══ 小工具（ES5）═══ */
 function $(id){ return document.getElementById(id); }
@@ -284,6 +287,16 @@ function loadCats(){
 }
 function saveCats(){
   try{ localStorage.setItem(LS_CATS, JSON.stringify(CATS)); }catch(e){}
+}
+function loadCatsDel(){
+  try{
+    var v = JSON.parse(localStorage.getItem(LS_CATS_DEL) || 'null');
+    if(Object.prototype.toString.call(v) === '[object Array]') return v;
+  }catch(e){}
+  return [];
+}
+function saveCatsDel(){
+  try{ localStorage.setItem(LS_CATS_DEL, JSON.stringify(CATS_DEL)); }catch(e){}
 }
 
 /* ═══ 雲端通道 ═══
@@ -406,35 +419,37 @@ function sbReq(method, path, body, headers, cb){
 }
 
 /* 讀雲端：回傳陣列；讀不到（網路錯）回傳 null */
-function cloudPull(cb){
-  sbReq('GET', '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data',
+function cloudPull(cb, key){
+  var k = key || SB_KEY;
+  sbReq('GET', '/rest/v1/tool_storage?key=eq.' + k + '&select=data',
     null, null, function(r){
-      diagAdd('讀 ' + CH_NAME + ' HTTP ' + (r.status || 'X') + ' · ' + (r.ok ? 'OK' : ('FAIL ' + (r.err || ''))) + ' · ' + r.ms + 'ms');
+      diagAdd('讀 ' + CH_NAME + ' [' + k + '] HTTP ' + (r.status || 'X') + ' · ' + (r.ok ? 'OK' : ('FAIL ' + (r.err || ''))) + ' · ' + r.ms + 'ms');
       if(!r.ok){ cb(null); return; }
       var rows = r.json;
       if(rows && rows.length && rows[0] &&
-         Object.prototype.toString.call(rows[0].data) === '[object Array]'){
-        cb(rows[0].data);
+         rows[0].data !== null && rows[0].data !== undefined){
+        cb(rows[0].data);   /* 可能是陣列（記錄）或物件（類別） */
       }else{
-        cb([]);   /* 也可能是「沒有這一列」→ 當空陣列 */
+        cb([]);             /* 沒有這一列 → 當空 */
       }
     });
 }
 
 /* 寫雲端：先 PATCH，沒有這一列就 POST 建立 */
-function cloudPush(arr, cb){
-  var payload = JSON.stringify({ data: arr });
-  sbReq('PATCH', '/rest/v1/tool_storage?key=eq.' + SB_KEY, payload,
+function cloudPush(val, cb, key){
+  var k = key || SB_KEY;
+  var payload = JSON.stringify({ data: val });
+  var sizeTxt = Object.prototype.toString.call(val) === '[object Array]' ? (val.length + '筆') : '物件';
+  sbReq('PATCH', '/rest/v1/tool_storage?key=eq.' + k, payload,
     { 'Content-Type':'application/json', 'Prefer':'return=representation' },
     function(r){
-      diagAdd('寫 ' + CH_NAME + ' HTTP ' + (r.status || 'X') + ' · ' + (r.ok ? 'OK' : ('FAIL ' + (r.err || ''))) + ' · ' + r.ms + 'ms · ' + arr.length + '筆');
+      diagAdd('寫 ' + CH_NAME + ' [' + k + '] HTTP ' + (r.status || 'X') + ' · ' + (r.ok ? 'OK' : ('FAIL ' + (r.err || ''))) + ' · ' + r.ms + 'ms · ' + sizeTxt);
       if(r.ok && r.json && r.json.length){ cb(true); return; }
       if(!r.ok && r.status !== 404 && r.status !== 406){
-        /* 真正失敗（權限／網路）→ 不再硬 POST */
         if(r.status !== 400){ cb(false); return; }
       }
       sbReq('POST', '/rest/v1/tool_storage',
-        JSON.stringify({ key: SB_KEY, data: arr }),
+        JSON.stringify({ key: k, data: val }),
         { 'Content-Type':'application/json',
           'Prefer':'resolution=merge-duplicates,return=representation' },
         function(r2){
@@ -442,6 +457,49 @@ function cloudPush(arr, cb){
           cb(r2.ok);
         });
     });
+}
+
+/* ═══ 類別標籤同步（跨裝置共用）═══
+   雲端格式：{ list:['螺栓',…], del:['已刪掉的名稱',…] }
+   合併規則：兩邊的 list 取聯集，再扣掉兩邊的 del → 刪除也會傳播
+*/
+function catsPush(cb){
+  cloudPush({ list: CATS, del: CATS_DEL }, function(ok){
+    diagAdd('類別上傳 ' + (ok ? 'OK' : 'FAIL') + ' · ' + CATS.length + ' 個');
+    if(cb) cb(ok);
+  }, SB_CATS);
+}
+function catsApply(cloudList, cloudDel){
+  var changed = false, i, kept = [], j;
+  if(Object.prototype.toString.call(cloudDel) === '[object Array]'){
+    for(i=0;i<cloudDel.length;i++){
+      if(CATS_DEL.indexOf(cloudDel[i]) < 0){ CATS_DEL.push(cloudDel[i]); changed = true; }
+    }
+  }
+  if(Object.prototype.toString.call(cloudList) === '[object Array]'){
+    for(i=0;i<cloudList.length;i++){
+      var c = cloudList[i];
+      if(!c) continue;
+      if(CATS_DEL.indexOf(c) < 0 && CATS.indexOf(c) < 0){ CATS.push(c); changed = true; }
+    }
+  }
+  for(j=0;j<CATS.length;j++){ if(CATS_DEL.indexOf(CATS[j]) < 0) kept.push(CATS[j]); }
+  if(kept.length !== CATS.length){ CATS = kept; changed = true; }
+  if(changed){ saveCats(); saveCatsDel(); renderCatTags(); syncCatTags(); }
+  return changed;
+}
+function catsSync(silent){
+  cloudPull(function(cloud){
+    if(cloud === null) return;
+    var list = null, del = null;
+    if(Object.prototype.toString.call(cloud) === '[object Array]'){
+      list = cloud;                       /* 早期格式：純名稱陣列 */
+    }else if(cloud && typeof cloud === 'object'){
+      list = cloud.list; del = cloud.del;
+    }
+    catsApply(list, del);
+    catsPush();
+  }, SB_CATS);
 }
 
 /* ═══ 合併（同步的靈魂）═══ */
@@ -513,6 +571,7 @@ function afterSync(ok, silent, count){
 function syncAll(silent){
   if(syncing) return;
   syncing = true;
+  catsSync(true);          /* 類別一起同步 */
   var btn = $('btnSync');
   if(btn){ btn.disabled = true; btn.innerHTML = '同步中…'; }
   if(!silent) setStatus('🔄 讀取雲端…', false);
@@ -622,20 +681,29 @@ function addCat(){
   inp.value = '';
   renderCatTags(); syncCatTags();
   toast('已新增類別：' + v);
+  catsPush();
 }
 function delCat(c){
   var i = CATS.indexOf(c);
   if(i < 0) return;
   CATS.splice(i,1); saveCats();
+  if(CATS_DEL.indexOf(c) < 0){ CATS_DEL.push(c); saveCatsDel(); }
   if($('f_category').value.replace(/^\s+|\s+$/g,'') === c) $('f_category').value = '';
   renderCatTags(); syncCatTags();
   toast('已刪除類別：' + c);
+  catsPush();
 }
 function resetCats(){
   CATS = DEFAULT_CATS.slice();
   saveCats();
+  var kept = [], i;
+  for(i=0;i<CATS_DEL.length;i++){
+    if(DEFAULT_CATS.indexOf(CATS_DEL[i]) < 0) kept.push(CATS_DEL[i]);
+  }
+  CATS_DEL = kept; saveCatsDel();
   renderCatTags(); syncCatTags();
   toast('已還原預設類別');
+  catsPush();
 }
 
 /* ═══ 列表渲染 ═══ */
@@ -858,10 +926,11 @@ function exportJson(){
   try{ t = localStorage.getItem(LS_THEME) || 'light'; }catch(e){}
   applyTheme(t);
   CATS = loadCats();
+  CATS_DEL = loadCatsDel();
   renderCatTags();
   data = readLocal();
   render();
-  syncAll(true);
+  syncAll(true);   /* 裡面會一併觸發 catsSync() */
 
   /* 每 20 秒自動拉一次；切回前景也拉 */
   setInterval(pullOnly, 20000);
