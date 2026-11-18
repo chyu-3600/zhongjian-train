@@ -34,7 +34,6 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 .btn:disabled{opacity:.55;cursor:wait}
 .search{flex:1;min-width:150px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--fg);font-size:13px;font-family:inherit;outline:none}
 .search:focus{border-color:var(--accent)}
-/* 記錄卡 */
 .rc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px}
 .rc-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .doc{font-size:15px;font-weight:800;color:var(--accent);word-break:break-all}
@@ -54,12 +53,11 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 .chip.yt{background:#ffecec;color:#c0392b}
 .yt-thumb{position:relative;display:block;margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid var(--border);line-height:0}
 .yt-thumb img{width:100%;display:block}
-.yt-thumb .pl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;background:rgba(0,0,0,.28);line-height:1}
+.yt-thumb .pl{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;background:rgba(0,0,0,.28);line-height:1}
 .rc-t{font-size:11px;color:var(--muted);margin-top:8px}
 .empty{text-align:center;color:var(--muted);font-size:13px;padding:44px 0}
 .footer{text-align:center;font-size:11px;color:var(--muted);padding:18px 0 8px}
-/* 彈窗 */
-.mw{position:fixed;inset:0;background:rgba(20,16,50,.55);display:flex;align-items:flex-end;justify-content:center;z-index:100}
+.mw{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(20,16,50,.55);display:flex;align-items:flex-end;justify-content:center;z-index:100}
 @media(min-width:640px){.mw{align-items:center;padding:18px}}
 .modal{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:18px}
 @media(min-width:640px){.modal{border-radius:18px}}
@@ -73,8 +71,8 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 .tag-btn{padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--fg2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .tag-btn:hover{border-color:var(--accent);color:var(--accent)}
 .tag-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.tag-btn.editing{padding-right:6px}
-.tag-x{margin-left:6px;color:var(--accent);font-size:11px;font-weight:900}
+.tag-btn.editing{padding-right:6px;border-color:#c0392b;color:#c0392b}
+.tag-x{margin-left:6px;color:#c0392b;font-size:11px;font-weight:900}
 .tag-tools{margin:2px 0 4px}
 .cat-manager{margin:6px 0 4px;padding:10px;border:1px dashed var(--border);border-radius:10px;background:var(--accent-dim)}
 .cat-manager input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:13px;font-family:inherit;outline:none}
@@ -82,13 +80,13 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 .filechip{display:flex;align-items:center;gap:8px;background:var(--accent-dim);border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:8px}
 .filechip a{color:var(--accent);font-weight:700;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filechip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px}
-.filehint{font-size:11px;color:var(--muted);margin-top:4px}
-.yt-prev{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;margin-top:8px}
-.yt-prev iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.filehint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6}
+.yt-prev{position:relative;height:0;padding-bottom:56.25%;border-radius:10px;overflow:hidden;background:#000;margin-top:8px}
+.yt-prev iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 .ma{display:flex;gap:10px;margin-top:20px}
 .ma .btn{flex:1;padding:12px}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140px);background:rgba(30,25,60,.92);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;z-index:200;transition:transform .35s;max-width:86vw;text-align:center;pointer-events:none}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.toast{position:fixed;left:50%;bottom:24px;margin-left:-50%;transform:translateY(140px);background:rgba(30,25,60,.92);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;z-index:200;transition:transform .35s;max-width:86vw;text-align:center;pointer-events:none}
+.toast.show{transform:translateY(0)}
 .hidden{display:none!important}
 </style>
 </head>
@@ -98,59 +96,54 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
     <div class="hl">
       <div class="ic">⚠️</div>
       <div>
-        <div class="ht">產品異常與改進 <span style="font-size:10px;color:var(--accent);vertical-align:middle">v20261118-XHR</span></div>
+        <div class="ht">產品異常與改進 <span style="font-size:10px;color:var(--accent);vertical-align:middle">v20261118-NEW</span></div>
         <div class="hs" id="sync">載入中…</div>
       </div>
     </div>
-    <button class="th-btn" id="thBtn" title="日夜切換">🌙</button>
+    <button class="th-btn" id="thBtn" title="日夜切換" onclick="toggleTheme()">🌙</button>
   </div>
 
   <div class="tb">
     <button class="btn primary" onclick="openForm()">＋ 新增記錄</button>
-    <button class="btn" onclick="syncNow()" id="btnSync" title="強制把本機記錄推送到雲端">🔄 同步</button>
+    <button class="btn" onclick="syncAll(false)" id="btnSync">🔄 同步</button>
     <input class="search" id="kw" placeholder="搜尋標題／單號／機台／客戶／類別／內容…" oninput="kw=this.value;render()">
-    <button class="btn" onclick="exportJson()" title="匯出 JSON 備份">匯出備份</button>
+    <button class="btn" onclick="exportJson()">匯出備份</button>
   </div>
 
   <div id="list"></div>
   <div class="empty hidden" id="empty">尚無記錄，按「＋ 新增記錄」建立第一筆</div>
-  <div class="footer">產品異常與改進 · PDF／Excel 存雲端 · 記錄雲端同步 · <span style="color:var(--accent);font-weight:700">v20261118-XHR</span></div>
+  <div class="footer">產品異常與改進 · PDF／Excel 存雲端 · 跨裝置自動同步 · <span style="color:var(--accent);font-weight:700">v20261118-NEW</span></div>
 </div>
 
-<!-- 新增／編輯彈窗 -->
 <div class="mw hidden" id="mw" onclick="if(event.target===this)closeForm()">
   <div class="modal">
     <h3 id="formTitle">新增記錄</h3>
-    <label>標題 *</label>
+    <label>標題</label>
     <input id="f_title" placeholder="" maxlength="120">
     <label>日期</label>
     <input id="f_date" type="date">
     <label>文件單號</label>
-    <input id="f_doc" placeholder="例：PA-2026-001" maxlength="60">
+    <input id="f_doc" placeholder="" maxlength="60">
     <label>機台編號</label>
-    <input id="f_machine" placeholder="例：CF-200" maxlength="60">
+    <input id="f_machine" placeholder="" maxlength="60">
     <label>客戶名稱</label>
-    <input id="f_customer" placeholder="例：XX 精密工業" maxlength="80">
+    <input id="f_customer" placeholder="" maxlength="80">
     <label>產品類別（點標籤快速帶入，或自行輸入）</label>
     <div class="tag-btns" id="catTags"></div>
     <div class="tag-tools"><button type="button" class="mini" id="catMgrBtn" onclick="toggleCatMgr()">✎ 管理類別</button></div>
     <div class="cat-manager hidden" id="catMgr">
-      <input id="newCat" placeholder="輸入新類別名稱，按 Enter 加入" maxlength="30" onkeydown="if(event.key==='Enter'){addCat();event.preventDefault();}">
+      <input id="newCat" placeholder="輸入新類別名稱，按 Enter 加入" maxlength="30" onkeydown="if(event.keyCode===13){addCat();event.preventDefault();}">
       <div class="cat-mgr-btns">
         <button type="button" class="mini" onclick="addCat()">＋ 加入</button>
         <button type="button" class="mini" onclick="resetCats()">↺ 還原預設</button>
         <button type="button" class="mini" onclick="toggleCatMgr()">收起</button>
       </div>
-      <div class="filehint">管理模式下每個標籤會出現 ✕，點它即可刪除。類別存於本瀏覽器。</div>
+      <div class="filehint">管理模式可直接點標籤上的 ✕ 刪除類別。類別存於本瀏覽器。</div>
     </div>
-    <input id="f_category" list="catList" placeholder="例：螺栓" maxlength="60">
-    <datalist id="catList">
-      <option value="螺栓"></option><option value="螺帽"></option><option value="墊片"></option>
-      <option value="扣件"></option><option value="鍛造件"></option><option value="車削件"></option>
-      <option value="沖壓件"></option><option value="其他"></option>
-    </datalist>
+    <input id="f_category" list="catList" placeholder="" maxlength="60" oninput="syncCatTags()">
+    <datalist id="catList"></datalist>
     <label>產品異常說明</label>
-    <textarea id="f_anomaly" rows="4" placeholder="異常現象、發生位置、數量、發現時間…"></textarea>
+    <textarea id="f_anomaly" rows="4" placeholder=""></textarea>
     <label>PDF 附件</label>
     <div id="pdfBox"></div>
     <input type="file" id="f_pdf" accept=".pdf,application/pdf">
@@ -159,10 +152,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
     <div id="xlBox"></div>
     <input type="file" id="f_xl" accept=".xls,.xlsx,.csv">
     <label>YouTube 影片連結</label>
-    <input id="f_yt" placeholder="https://www.youtube.com/watch?v=…" maxlength="200">
+    <input id="f_yt" placeholder="" maxlength="200" oninput="ytPreview()">
     <div class="yt-prev hidden" id="ytPrev"></div>
     <label>產品異常改進說明</label>
-    <textarea id="f_improve" rows="4" placeholder="改善對策、負責人、進度、驗證結果…"></textarea>
+    <textarea id="f_improve" rows="4" placeholder=""></textarea>
     <div class="ma">
       <button class="btn" onclick="closeForm()">取消</button>
       <button class="btn primary" id="btnSave" onclick="save()">儲存</button>
@@ -173,357 +166,615 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 <div class="toast" id="toast"></div>
 
 <script>
-/* ═══ Supabase（與訓練 App／知識庫共用 tool_storage，key='product_anomaly'）═══ */
-const SB_URL = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
-const SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
-const SB_KEY = 'product_anomaly';
-const LS_DATA = 'anomalyData', LS_DIRTY = 'anomalyDirty', LS_THEME = 'anomaly-theme', LS_CATS = 'anomalyCats';
-const DEFAULT_CATS = ['螺栓', '螺帽', '墊片', '扣件', '鍛造件', '車削件', '沖壓件', '其他'];
+/* ═══════════════════════════════════════════════════════════════
+   產品異常與改進  v20261118-NEW
+   規範：純 ES5（var / function / XMLHttpRequest）
+        不用 fetch、不用箭頭函式、不用 async/await、不用 Promise
+        → 舊 Android WebView 也能跑
+   同步模型：讀雲端 → 與本機合併（刪除優先、updated 較新勝）→ 寫回
+            ＋ 每 20 秒自動輪詢，切回前景立即同步
+   ═══════════════════════════════════════════════════════════════ */
 
-function loadCats() {
-  try { const v = JSON.parse(localStorage.getItem(LS_CATS) || 'null'); if (Array.isArray(v) && v.length) return v; }
-  catch (e) { }
-  return DEFAULT_CATS.slice();
+var SB_URL  = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
+var SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
+var SB_KEY  = 'anomaly_v2';                 /* 新的雲端 key，舊資料不再讀取 */
+var LS_DATA = 'anomaly2_data';
+var LS_THEME = 'anomaly2_theme';
+var LS_CATS = 'anomaly2_cats';
+var DEFAULT_CATS = ['螺栓','螺帽','墊片','扣件','鍛造件','車削件','沖壓件','其他'];
+
+var data = [];
+var kw = '';
+var editId = null;
+var rmPdf = false;
+var rmXl = false;
+var catMgrOn = false;
+var syncing = false;
+var CATS = [];
+
+/* ═══ 小工具（ES5）═══ */
+function $(id){ return document.getElementById(id); }
+
+function esc(s){
+  s = (s === null || s === undefined) ? '' : String(s);
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-let CATS = loadCats();
-
-let data = [], kw = '', editId = null, rmPdf = false, rmXl = false, catMgrOn = false;
-
-const $ = id => document.getElementById(id);
-const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmt = d => d ? String(d).slice(0, 10) + ' ' + String(d).slice(11, 16) : '';
-function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-function ytId(url) {
-  const m = String(url || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{6,20})/);
+function hasC(el,c){ if(!el) return false; return (' '+el.className+' ').indexOf(' '+c+' ')>-1; }
+function addC(el,c){ if(el && !hasC(el,c)) el.className = (el.className ? el.className+' ' : '')+c; }
+function remC(el,c){
+  if(!el) return;
+  var s = ' '+el.className+' ';
+  s = s.replace(new RegExp(' '+c+' ','g'),' ');
+  s = s.replace(/^\s+/,'').replace(/\s+$/,'');
+  el.className = s;
+}
+function togC(el,c,on){
+  if(on === undefined) on = !hasC(el,c);
+  if(on) addC(el,c); else remC(el,c);
+}
+function pad2(n){ return n<10 ? '0'+n : ''+n; }
+function today(){
+  var d = new Date();
+  return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+}
+function fmtTs(ms){
+  if(!ms) return '';
+  var d = new Date(ms);
+  if(isNaN(d.getTime())) return '';
+  return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());
+}
+function nowTime(){
+  var d = new Date();
+  return pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds());
+}
+function ytId(url){
+  var m = String(url||'').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{6,20})/);
   return m ? m[1] : '';
 }
-let toastTimer = null;
-function toast(msg) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+
+var toastTimer = null;
+function toast(msg){
+  var t = $('toast');
+  t.innerHTML = esc(msg);
+  addC(t,'show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ remC(t,'show'); }, 2800);
 }
 
 /* ═══ 主題 ═══ */
-(function () {
-  if (localStorage.getItem(LS_THEME) === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    $('thBtn').textContent = '☀️';
+function applyTheme(t){
+  if(t === 'dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    $('thBtn').innerHTML = '☀️';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    $('thBtn').innerHTML = '🌙';
   }
-})();
-$('thBtn').onclick = function () {
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
-  $('thBtn').textContent = dark ? '🌙' : '☀️';
-  localStorage.setItem(LS_THEME, dark ? 'light' : 'dark');
-};
+}
+function toggleTheme(){
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var t = dark ? 'light' : 'dark';
+  try{ localStorage.setItem(LS_THEME,t); }catch(e){}
+  applyTheme(t);
+}
 
-/* ═══ 雲端通訊（XMLHttpRequest，相容舊環境；不用 fetch）═══ */
-function sbReq(method, path, body, headers, timeout) {
-  return new Promise(function (resolve) {
-    var xhr = new XMLHttpRequest();
+/* ═══ 本機存取 ═══ */
+function readLocal(){
+  try{
+    var v = JSON.parse(localStorage.getItem(LS_DATA) || '[]');
+    return Object.prototype.toString.call(v) === '[object Array]' ? v : [];
+  }catch(e){ return []; }
+}
+function saveLocal(){
+  try{ localStorage.setItem(LS_DATA, JSON.stringify(data)); }catch(e){}
+}
+function loadCats(){
+  try{
+    var v = JSON.parse(localStorage.getItem(LS_CATS) || 'null');
+    if(Object.prototype.toString.call(v) === '[object Array]' && v.length) return v;
+  }catch(e){}
+  return DEFAULT_CATS.slice();
+}
+function saveCats(){
+  try{ localStorage.setItem(LS_CATS, JSON.stringify(CATS)); }catch(e){}
+}
+
+/* ═══ 雲端通訊：XMLHttpRequest（不用 fetch）═══ */
+function sbReq(method, path, body, headers, cb){
+  var xhr = new XMLHttpRequest();
+  var finished = false;
+  function fin(ok, status, json){
+    if(finished) return;
+    finished = true;
+    cb({ ok: ok, status: status, json: json });
+  }
+  try{
     xhr.open(method, SB_URL + path, true);
     xhr.setRequestHeader('apikey', SB_ANON);
     xhr.setRequestHeader('Authorization', 'Bearer ' + SB_ANON);
-    var h = headers || {};
-    for (var k in h) { if (h.hasOwnProperty(k)) xhr.setRequestHeader(k, h[k]); }
-    xhr.timeout = timeout || 20000;
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState !== 4) return;
+    if(headers){
+      for(var k in headers){
+        if(headers.hasOwnProperty(k)) xhr.setRequestHeader(k, headers[k]);
+      }
+    }
+    xhr.timeout = 25000;
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState !== 4) return;
       var json = null;
-      try { json = JSON.parse(xhr.responseText); } catch (e) { }
-      resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json: json });
+      try{ json = JSON.parse(xhr.responseText); }catch(e){}
+      fin(xhr.status >= 200 && xhr.status < 300, xhr.status, json);
     };
-    xhr.ontimeout = function () { resolve({ ok: false, status: 0, json: null }); };
-    xhr.onerror = function () { resolve({ ok: false, status: 0, json: null }); };
-    xhr.send(body == null ? null : body);
+    xhr.ontimeout = function(){ fin(false, 0, null); };
+    xhr.onerror   = function(){ fin(false, 0, null); };
+    xhr.send(body === null || body === undefined ? null : body);
+  }catch(e){
+    fin(false, 0, null);
+  }
+}
+
+/* 讀雲端：回傳陣列；讀不到（網路錯）回傳 null */
+function cloudPull(cb){
+  sbReq('GET', '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data',
+    null, null, function(r){
+      if(!r.ok){ cb(null); return; }
+      var rows = r.json;
+      if(rows && rows.length && rows[0] &&
+         Object.prototype.toString.call(rows[0].data) === '[object Array]'){
+        cb(rows[0].data);
+      }else{
+        cb([]);   /* 也可能是「沒有這一列」→ 當空陣列 */
+      }
+    });
+}
+
+/* 寫雲端：先 PATCH，沒有這一列就 POST 建立 */
+function cloudPush(arr, cb){
+  var payload = JSON.stringify({ data: arr });
+  sbReq('PATCH', '/rest/v1/tool_storage?key=eq.' + SB_KEY, payload,
+    { 'Content-Type':'application/json', 'Prefer':'return=representation' },
+    function(r){
+      if(r.ok && r.json && r.json.length){ cb(true); return; }
+      if(!r.ok && r.status !== 404 && r.status !== 406){
+        /* 真正失敗（權限／網路）→ 不再硬 POST */
+        if(r.status !== 400){ cb(false); return; }
+      }
+      sbReq('POST', '/rest/v1/tool_storage',
+        JSON.stringify({ key: SB_KEY, data: arr }),
+        { 'Content-Type':'application/json',
+          'Prefer':'resolution=merge-duplicates,return=representation' },
+        function(r2){ cb(r2.ok); });
+    });
+}
+
+/* ═══ 合併（同步的靈魂）═══ */
+function numT(v){
+  if(typeof v === 'number') return v;
+  var n = Date.parse(String(v||''));
+  return isNaN(n) ? 0 : n;
+}
+function cloneObj(o){
+  var r = {}, k;
+  for(k in o){ if(o.hasOwnProperty(k)) r[k] = o[k]; }
+  return r;
+}
+/* 規則：① 同 id 只留一筆 ② updated 較新者勝 ③ 任一邊標記刪除 → 一律刪除 */
+function mergeAll(a, b){
+  var map = {}, i, r, old, win, k;
+  a = a || []; b = b || [];
+  for(i=0;i<a.length;i++){
+    r = a[i];
+    if(r && r.id) map[r.id] = cloneObj(r);
+  }
+  for(i=0;i<b.length;i++){
+    r = b[i];
+    if(!r || !r.id) continue;
+    old = map[r.id];
+    if(!old){ map[r.id] = cloneObj(r); continue; }
+    win = numT(r.updated) >= numT(old.updated) ? cloneObj(r) : old;
+    if(old._del || r._del) win._del = 1;
+    map[r.id] = win;
+  }
+  var out = [];
+  for(k in map){ if(map.hasOwnProperty(k)) out.push(map[k]); }
+  out.sort(function(x,y){ return numT(y.updated) - numT(x.updated); });
+  return out;
+}
+/* 清掉超過 60 天的墓碑，陣列才不會無限長大 */
+function prune(arr){
+  var now = Date.now(), out = [], i, r;
+  for(i=0;i<arr.length;i++){
+    r = arr[i];
+    if(r._del && (now - numT(r.updated)) > 60*86400000) continue;
+    out.push(r);
+  }
+  return out;
+}
+
+/* ═══ 同步主流程 ═══ */
+/* 只算「看得到的」筆數（墓碑不計入，狀態列才不會顯示 1 筆卻看不到東西）*/
+function liveCount(){
+  var n = 0, i;
+  for(i=0;i<data.length;i++){ if(!data[i]._del) n++; }
+  return n;
+}
+function setStatus(txt, warn){
+  var el = $('sync');
+  el.innerHTML = esc(txt);
+  el.style.color = warn ? '#c0392b' : '';
+}
+function afterSync(ok, silent, count){
+  if(ok){
+    setStatus('☁️ 已同步 · ' + count + ' 筆 · ' + nowTime(), false);
+    if(!silent) toast('已同步：' + count + ' 筆');
+  }else{
+    setStatus('⚠️ 雲端同步失敗，資料已存本機（檢查網路後按 🔄）', true);
+    if(!silent) toast('同步失敗，資料已存在本機');
+  }
+}
+/* silent=true 時不跳 toast（自動輪詢用） */
+function syncAll(silent){
+  if(syncing) return;
+  syncing = true;
+  var btn = $('btnSync');
+  if(btn){ btn.disabled = true; btn.innerHTML = '同步中…'; }
+  if(!silent) setStatus('🔄 讀取雲端…', false);
+
+  data = prune(mergeAll(readLocal(), data));
+  cloudPull(function(cloud){
+    if(cloud === null){
+      /* 讀不到雲端 → 至少把本機推上去試試 */
+      cloudPush(data, function(ok){
+        syncing = false;
+        if(btn){ btn.disabled = false; btn.innerHTML = '🔄 同步'; }
+        afterSync(ok, silent, liveCount());
+      });
+      return;
+    }
+    data = prune(mergeAll(cloud, data));
+    saveLocal(); render();
+    cloudPush(data, function(ok){
+      syncing = false;
+      if(btn){ btn.disabled = false; btn.innerHTML = '🔄 同步'; }
+      afterSync(ok, silent, liveCount());
+    });
+  });
+}
+/* 只拉不合併推（背景輪詢用，省寫入）*/
+function pullOnly(){
+  if(syncing) return;
+  cloudPull(function(cloud){
+    if(cloud === null) return;
+    var before = JSON.stringify(data);
+    var next = prune(mergeAll(cloud, data));
+    if(JSON.stringify(next) !== before){
+      data = next; saveLocal(); render();
+      setStatus('☁️ 已同步 · ' + liveCount() + ' 筆 · ' + nowTime(), false);
+    }
   });
 }
 
-/* ═══ 雲端同步（tool_storage：PATCH 整列，不存在才 POST）═══ */
-async function loadFromCloud() {
-  try {
-    const r = await sbReq('GET', '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data', null, {}, 15000);
-    if (!r.ok) return null;
-    const d = r.json;
-    if (d && d[0] && Array.isArray(d[0].data)) return d[0].data;
-  } catch (e) { }
-  return null;
-}
-async function saveToCloud(arr) {
-  try {
-    let r = await sbReq('PATCH', '/rest/v1/tool_storage?key=eq.' + SB_KEY,
-      JSON.stringify({ data: arr }),
-      { 'Content-Type': 'application/json', 'Prefer': 'return=representation' });
-    if (!r.ok) return false;
-    if (Array.isArray(r.json) && r.json.length) return true;
-    r = await sbReq('POST', '/rest/v1/tool_storage',
-      JSON.stringify({ key: SB_KEY, data: arr }),
-      { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' });
-    return r.ok;
-  } catch (e) { return false; }
-}
-function syncUi(ok, checked) {
-  const el = $('sync');
-  el.textContent = ok ? '☁️ 已同步到雲端'
-    : (checked ? '⚠️ 雲端同步失敗，資料先留在本機（請檢查網路後再操作一次）' : '☁️ 連線中…');
-}
-function markDirty(on) { if (on) localStorage.setItem(LS_DIRTY, '1'); else localStorage.removeItem(LS_DIRTY); }
-function readLocal() {
-  try { const v = JSON.parse(localStorage.getItem(LS_DATA) || '[]'); return Array.isArray(v) ? v : []; }
-  catch (e) { return []; }
-}
-function saveLocal() { localStorage.setItem(LS_DATA, JSON.stringify(data)); }
-/* 用 id 合併雲端＋本機，updated 較新者勝（共用給載入與手動同步）*/
-function mergeData(cloud, local) {
-  const map = {};
-  (cloud || []).forEach(function (r) { if (r && r.id) map[r.id] = r; });
-  (local || []).forEach(function (r) { if (r && r.id) {
-    if (!map[r.id] || String(r.updated || '') >= String(map[r.id].updated || '')) map[r.id] = r;
-  } });
-  return Object.keys(map).map(function (k) { return map[k]; });
-}
-async function loadData() {
-  // 統一「抓雲端＋合併本機」：不再用 dirty 直接覆蓋（那會讓每台各做各的互相蓋掉）
-  const local = readLocal();
-  const cloud = await loadFromCloud();
-  if (cloud === null) {
-    // 雲端抓不到（離線或尚無此列）→ 用本機，並嘗試補傳
-    data = local; render(); syncUi(false, false);
-    if (data.length) { const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true); }
-    return;
-  }
-  data = mergeData(cloud, local);
-  saveLocal(); render();
-  const ok = await saveToCloud(data); // 把合併結果寫回雲端，讓所有裝置一致
-  markDirty(!ok); syncUi(ok, true);
-}
-/* 雙向合併同步：抓雲端＋本機，用 id 去重合併後寫回兩邊（避免任一台覆蓋另一台）*/
-async function syncNow() {
-  const btn = $('btnSync');
-  btn.disabled = true; btn.textContent = '同步中…';
-  try {
-    const local = readLocal();
-    const cloud = await loadFromCloud();
-    data = mergeData(cloud, local);
-    saveLocal(); render();
-    const ok = await saveToCloud(data);
-    markDirty(!ok); syncUi(ok, true);
-    toast(ok ? '已同步：共 ' + data.length + ' 筆（本機＋雲端合併）' : '同步失敗，資料仍留在本機');
-  } catch (e) {
-    toast('同步失敗：' + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = '🔄 同步';
-  }
+/* ═══ 檔案上傳（Supabase storage bucket 'media'）═══ */
+function uploadFile(file, cb){
+  var m = String(file.name).match(/\.(\w+)$/);
+  var ext = m ? m[1].toLowerCase() : 'bin';
+  var path = 'anomaly/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+  sbReq('POST', '/storage/v1/object/media/' + path, file,
+    { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert':'true' },
+    function(r){
+      if(!r.ok){ cb(null); return; }
+      cb(SB_URL + '/storage/v1/object/public/media/' + path);
+    });
 }
 
-/* ═══ 檔案上傳（Supabase storage bucket 'media'，路徑 anomaly/）═══ */
-async function uploadFile(file) {
-  const ext = (file.name.match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
-  const path = 'anomaly/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-  const r = await sbReq('POST', '/storage/v1/object/media/' + path, file,
-    { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' }, 60000);
-  if (!r.ok) throw new Error('上傳失敗（' + r.status + '）');
-  return SB_URL + '/storage/v1/object/public/media/' + path;
+/* ═══ 類別標籤 ═══ */
+function renderCatTags(){
+  var box = $('catTags');
+  box.innerHTML = '';
+  for(var i=0;i<CATS.length;i++){
+    box.appendChild(makeTagBtn(CATS[i]));
+  }
+  var dl = $('catList'), h = '';
+  for(var j=0;j<CATS.length;j++){ h += '<option value="' + esc(CATS[j]) + '"></option>'; }
+  dl.innerHTML = h;
 }
-
-/* ═══ 類別標籤按鈕（點一下帶入，再點一次取消；管理模式可增刪）═══ */
-function renderCatTags() {
-  $('catTags').innerHTML = CATS.map(function (c) {
-    const x = catMgrOn ? '<span class="tag-x" data-del="' + esc(c) + '" title="刪除類別">✕</span>' : '';
-    return '<button type="button" class="tag-btn' + (catMgrOn ? ' editing' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + x + '</button>';
-  }).join('');
-  $('catList').innerHTML = CATS.map(function (c) { return '<option value="' + esc(c) + '"></option>'; }).join('');
+function makeTagBtn(c){
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'tag-btn';
+  b.appendChild(document.createTextNode(c));
+  if(catMgrOn){
+    addC(b,'editing');
+    var x = document.createElement('span');
+    x.className = 'tag-x';
+    x.appendChild(document.createTextNode('✕'));
+    b.appendChild(x);
+    b.onclick = function(){ delCat(c); };
+  }else{
+    if($('f_category').value.replace(/^\s+|\s+$/g,'') === c) addC(b,'on');
+    b.onclick = function(){ pickCat(c); };
+  }
+  return b;
 }
-$('catTags').addEventListener('click', function (e) {
-  const del = e.target.getAttribute && e.target.getAttribute('data-del');
-  if (del !== null && del !== undefined) { delCat(del); return; }
-  const btn = e.target.closest ? e.target.closest('.tag-btn') : null;
-  if (btn) { if (catMgrOn) return; pickCat(btn.getAttribute('data-cat')); }
-});
-function syncCatTags() {
-  const v = $('f_category').value.trim();
-  const btns = $('catTags').querySelectorAll('.tag-btn');
-  for (let i = 0; i < btns.length; i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-cat') === v);
+function syncCatTags(){
+  var v = $('f_category').value.replace(/^\s+|\s+$/g,'');
+  var btns = $('catTags').getElementsByTagName('button');
+  for(var i=0;i<btns.length;i++){
+    togC(btns[i],'on', catMgrOn ? false : (btns[i].getAttribute('data-c') === v || btns[i].firstChild.nodeValue === v));
+  }
 }
-function pickCat(c) {
-  const inp = $('f_category');
-  inp.value = (inp.value.trim() === c) ? '' : c;
+function pickCat(c){
+  var inp = $('f_category');
+  var cur = inp.value.replace(/^\s+|\s+$/g,'');
+  inp.value = (cur === c) ? '' : c;
   syncCatTags();
 }
-function toggleCatMgr() {
+function toggleCatMgr(){
   catMgrOn = !catMgrOn;
-  $('catMgr').classList.toggle('hidden', !catMgrOn);
-  $('catMgrBtn').textContent = catMgrOn ? '✕ 結束管理' : '✎ 管理類別';
+  togC($('catMgr'),'hidden', !catMgrOn);
+  $('catMgrBtn').innerHTML = catMgrOn ? '✕ 結束管理' : '✎ 管理類別';
+  renderCatTags();
+  if(catMgrOn) $('newCat').focus();
+}
+function addCat(){
+  var inp = $('newCat');
+  var v = inp.value.replace(/^\s+|\s+$/g,'');
+  if(!v){ toast('請輸入類別名稱'); inp.focus(); return; }
+  if(CATS.indexOf(v) > -1){ toast('類別已存在'); return; }
+  CATS.push(v); saveCats();
+  inp.value = '';
   renderCatTags(); syncCatTags();
-  if (catMgrOn) $('newCat').focus();
+  toast('已新增類別：' + v);
 }
-function addCat() {
-  const inp = $('newCat'), v = inp.value.trim();
-  if (!v) { toast('請輸入類別名稱'); inp.focus(); return; }
-  if (CATS.indexOf(v) >= 0) { toast('類別已存在'); return; }
-  CATS.push(v);
-  localStorage.setItem(LS_CATS, JSON.stringify(CATS));
-  inp.value = ''; renderCatTags(); syncCatTags(); toast('已新增類別：' + v);
+function delCat(c){
+  var i = CATS.indexOf(c);
+  if(i < 0) return;
+  CATS.splice(i,1); saveCats();
+  if($('f_category').value.replace(/^\s+|\s+$/g,'') === c) $('f_category').value = '';
+  renderCatTags(); syncCatTags();
+  toast('已刪除類別：' + c);
 }
-function delCat(c) {
-  CATS = CATS.filter(function (x) { return x !== c; });
-  localStorage.setItem(LS_CATS, JSON.stringify(CATS));
-  if ($('f_category').value.trim() === c) $('f_category').value = '';
-  renderCatTags(); syncCatTags(); toast('已刪除類別：' + c);
-}
-function resetCats() {
+function resetCats(){
   CATS = DEFAULT_CATS.slice();
-  localStorage.setItem(LS_CATS, JSON.stringify(CATS));
-  renderCatTags(); syncCatTags(); toast('已還原預設類別');
-}
-$('f_category').addEventListener('input', syncCatTags);
-renderCatTags();
-
-/* ═══ 渲染 ═══ */
-function render() {
-  const k = kw.trim().toLowerCase();
-  const sorted = [...data].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.created || '').localeCompare(String(a.created || '')));
-  const list = k ? sorted.filter(r => [r.title, r.date, r.doc_no, r.machine_no, r.customer, r.category, r.anomaly, r.improvement]
-    .join(' ').toLowerCase().includes(k)) : sorted;
-  $('empty').classList.toggle('hidden', list.length > 0);
-  $('list').innerHTML = list.map(card).join('');
-}
-function card(r) {
-  const yt = ytId(r.youtube);
-  return '<div class="rc">'
-    + '<div class="rc-hd"><span class="doc">' + esc(r.title || r.doc_no || '（未命名）') + '</span>'
-    + '<span class="ops">'
-    + '<button class="mini" onclick="openForm(\'' + r.id + '\')">編輯</button>'
-    + '<button class="mini del" onclick="del(\'' + r.id + '\')">刪除</button>'
-    + '</span></div>'
-    + '<div class="rc-meta">'
-    + (r.date ? '<span>📅 ' + esc(r.date) + '</span>' : '')
-    + (r.title && r.doc_no ? '<span>📄 ' + esc(r.doc_no) + '</span>' : '')
-    + (r.machine_no ? '<span>🔧 ' + esc(r.machine_no) + '</span>' : '')
-    + (r.customer ? '<span>🏭 ' + esc(r.customer) + '</span>' : '')
-    + (r.category ? '<span>📦 ' + esc(r.category) + '</span>' : '')
-    + '</div>'
-    + (r.anomaly ? '<div class="rc-s"><b>異常：</b>' + esc(r.anomaly) + '</div>' : '')
-    + (r.improvement ? '<div class="rc-s"><b>改進：</b>' + esc(r.improvement) + '</div>' : '')
-    + '<div class="rc-f">'
-    + (r.pdf_url ? '<a class="chip pdf" href="' + esc(r.pdf_url) + '" target="_blank" rel="noopener">📄 <span>' + esc(r.pdf_name || 'PDF 附件') + '</span></a>' : '')
-    + (r.excel_url ? '<a class="chip xl" href="' + esc(r.excel_url) + '" target="_blank" rel="noopener">📊 <span>' + esc(r.excel_name || 'Excel 附件') + '</span></a>' : '')
-    + (yt ? '<a class="chip yt" href="https://www.youtube.com/watch?v=' + yt + '" target="_blank" rel="noopener">▶ YouTube 影片</a>' : '')
-    + '</div>'
-    + (yt ? '<a class="yt-thumb" href="https://www.youtube.com/watch?v=' + yt + '" target="_blank" rel="noopener">'
-      + '<img src="https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg" alt="YouTube 影片" loading="lazy">'
-      + '<span class="pl">▶</span></a>' : '')
-    + '<div class="rc-t">' + (r.updated ? '更新 ' + fmt(r.updated) : '') + (r.created && r.created !== r.updated ? ' · 建立 ' + fmt(r.created) : '') + '</div>'
-    + '</div>';
+  saveCats();
+  renderCatTags(); syncCatTags();
+  toast('已還原預設類別');
 }
 
-/* ═══ 新增／編輯 ═══ */
-function openForm(id) {
-  editId = id || null; rmPdf = false; rmXl = false;
-  const r = id ? data.find(x => x.id === id) : null;
-  $('formTitle').textContent = r ? '編輯記錄' : '新增記錄';
-  $('f_title').value = r ? (r.title || '') : '';
-  $('f_date').value = r ? (r.date || '') : today();
-  $('f_doc').value = r ? (r.doc_no || '') : '';
-  $('f_machine').value = r ? (r.machine_no || '') : '';
+/* ═══ 列表渲染 ═══ */
+function render(){
+  var visible = [], i, r;
+  for(i=0;i<data.length;i++){
+    if(!data[i]._del) visible.push(data[i]);
+  }
+  visible.sort(function(a,b){
+    var d = String(b.date||'').localeCompare(String(a.date||''));
+    if(d) return d;
+    return numT(b.updated) - numT(a.updated);
+  });
+
+  var k = kw.replace(/^\s+|\s+$/g,'').toLowerCase();
+  var list = [], hay;
+  for(i=0;i<visible.length;i++){
+    r = visible[i];
+    if(k){
+      hay = [r.title, r.doc_no, r.machine_no, r.customer, r.category, r.anomaly, r.improvement, r.date].join(' ').toLowerCase();
+      if(hay.indexOf(k) < 0) continue;
+    }
+    list.push(r);
+  }
+
+  togC($('empty'), 'hidden', list.length > 0);
+  var h = '';
+  for(i=0;i<list.length;i++) h += cardHtml(list[i]);
+  $('list').innerHTML = h;
+}
+function cardHtml(r){
+  var yt = ytId(r.youtube);
+  var h = '<div class="rc">';
+  h += '<div class="rc-hd"><span class="doc">' + esc(r.title || r.doc_no || '（未命名）') + '</span>';
+  h += '<span class="ops">';
+  h += '<button class="mini" onclick="openForm(\'' + esc(r.id) + '\')">編輯</button>';
+  h += '<button class="mini del" onclick="delRecord(\'' + esc(r.id) + '\')">刪除</button>';
+  h += '</span></div>';
+  h += '<div class="rc-meta">';
+  if(r.date)      h += '<span>📅 ' + esc(r.date) + '</span>';
+  if(r.doc_no)    h += '<span>📄 ' + esc(r.doc_no) + '</span>';
+  if(r.machine_no)h += '<span>🔧 ' + esc(r.machine_no) + '</span>';
+  if(r.customer)  h += '<span>🏭 ' + esc(r.customer) + '</span>';
+  if(r.category)  h += '<span>📦 ' + esc(r.category) + '</span>';
+  h += '</div>';
+  if(r.anomaly)     h += '<div class="rc-s"><b>異常：</b>' + esc(r.anomaly) + '</div>';
+  if(r.improvement) h += '<div class="rc-s"><b>改進：</b>' + esc(r.improvement) + '</div>';
+  h += '<div class="rc-f">';
+  if(r.pdf_url)   h += '<a class="chip pdf" href="' + esc(r.pdf_url) + '" target="_blank" rel="noopener">📄 <span>' + esc(r.pdf_name || 'PDF 附件') + '</span></a>';
+  if(r.excel_url) h += '<a class="chip xl" href="' + esc(r.excel_url) + '" target="_blank" rel="noopener">📊 <span>' + esc(r.excel_name || 'Excel 附件') + '</span></a>';
+  if(yt)          h += '<a class="chip yt" href="https://www.youtube.com/watch?v=' + yt + '" target="_blank" rel="noopener">▶ YouTube 影片</a>';
+  h += '</div>';
+  if(yt){
+    h += '<a class="yt-thumb" href="https://www.youtube.com/watch?v=' + yt + '" target="_blank" rel="noopener">'
+      + '<img src="https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg" alt="YouTube" loading="lazy">'
+      + '<span class="pl">▶</span></a>';
+  }
+  h += '<div class="rc-t">' + (r.updated ? '更新 ' + fmtTs(numT(r.updated)) : '') + '</div>';
+  h += '</div>';
+  return h;
+}
+
+/* ═══ 新增／編輯表單 ═══ */
+function openForm(id){
+  editId = id || null;
+  rmPdf = false; rmXl = false;
+  var r = null, i;
+  if(id){
+    for(i=0;i<data.length;i++){ if(data[i].id === id){ r = data[i]; break; } }
+  }
+  $('formTitle').innerHTML = r ? '編輯記錄' : '新增記錄';
+  $('f_title').value    = r ? (r.title || '') : '';
+  $('f_date').value     = r ? (r.date || '') : today();
+  $('f_doc').value      = r ? (r.doc_no || '') : '';
+  $('f_machine').value  = r ? (r.machine_no || '') : '';
   $('f_customer').value = r ? (r.customer || '') : '';
   $('f_category').value = r ? (r.category || '') : '';
-  $('f_anomaly').value = r ? (r.anomaly || '') : '';
-  $('f_improve').value = r ? (r.improvement || '') : '';
-  $('f_yt').value = r ? (r.youtube || '') : '';
-  $('f_pdf').value = ''; $('f_xl').value = '';
+  $('f_anomaly').value  = r ? (r.anomaly || '') : '';
+  $('f_improve').value  = r ? (r.improvement || '') : '';
+  $('f_yt').value       = r ? (r.youtube || '') : '';
+  $('f_pdf').value = '';
+  $('f_xl').value = '';
   renderFileBox('pdfBox', r && r.pdf_url, r && r.pdf_name, 'pdf');
-  renderFileBox('xlBox', r && r.excel_url, r && r.excel_name, 'xl');
-  syncCatTags();
-  ytPreview();
-  $('mw').classList.remove('hidden');
-  if (window.innerWidth >= 640) $('f_title').focus();
+  renderFileBox('xlBox',  r && r.excel_url, r && r.excel_name, 'xl');
+  renderCatTags(); syncCatTags(); ytPreview();
+  remC($('mw'),'hidden');
+  if(window.innerWidth >= 640) $('f_title').focus();
 }
-function renderFileBox(boxId, url, name, kind) {
-  const box = $(boxId);
-  if (!url) { box.innerHTML = ''; return; }
+function renderFileBox(boxId, url, name, kind){
+  var box = $(boxId);
+  if(!url){ box.innerHTML = ''; return; }
   box.innerHTML = '<div class="filechip"><a href="' + esc(url) + '" target="_blank" rel="noopener">'
     + (kind === 'pdf' ? '📄 ' : '📊 ') + esc(name || '附件') + '</a>'
     + '<button title="移除此附件" onclick="rmAttach(\'' + kind + '\')">✕</button></div>';
 }
-function rmAttach(kind) {
-  if (kind === 'pdf') { rmPdf = true; renderFileBox('pdfBox', null); }
+function rmAttach(kind){
+  if(kind === 'pdf'){ rmPdf = true; renderFileBox('pdfBox', null); }
   else { rmXl = true; renderFileBox('xlBox', null); }
 }
-function ytPreview() {
-  const id = ytId($('f_yt').value);
-  const p = $('ytPrev');
-  if (id) {
-    p.classList.remove('hidden');
-    p.innerHTML = '<iframe src="https://www.youtube.com/embed/' + id + '" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
-  } else { p.classList.add('hidden'); p.innerHTML = ''; }
-}
-$('f_yt').addEventListener('input', ytPreview);
-function closeForm() { $('mw').classList.add('hidden'); editId = null; }
-
-/* ═══ 儲存（先上傳檔案，再存紀錄）═══ */
-async function save() {
-  const title = $('f_title').value.trim();
-  const doc = $('f_doc').value.trim();
-  const btn = $('btnSave');
-  btn.disabled = true; btn.textContent = '處理中…';
-  try {
-    const pdfFile = $('f_pdf').files[0], xlFile = $('f_xl').files[0];
-    let rec = editId ? data.find(x => x.id === editId) : null;
-    if (!rec) rec = { id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: new Date().toISOString() };
-    if (pdfFile) { rec.pdf_url = await uploadFile(pdfFile); rec.pdf_name = pdfFile.name; }
-    if (xlFile) { rec.excel_url = await uploadFile(xlFile); rec.excel_name = xlFile.name; }
-    if (rmPdf) { rec.pdf_url = ''; rec.pdf_name = ''; }
-    if (rmXl) { rec.excel_url = ''; rec.excel_name = ''; }
-    rec.date = $('f_date').value;
-    rec.title = title;
-    rec.doc_no = doc;
-    rec.machine_no = $('f_machine').value.trim();
-    rec.customer = $('f_customer').value.trim();
-    rec.category = $('f_category').value.trim();
-    rec.anomaly = $('f_anomaly').value;
-    rec.improvement = $('f_improve').value;
-    rec.youtube = $('f_yt').value.trim();
-    rec.updated = new Date().toISOString();
-    if (!editId) data.unshift(rec);
-    saveLocal(); markDirty(true);
-    closeForm(); render();
-    const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true);
-    toast(ok ? '已儲存並同步雲端' : '已儲存在本機，雲端同步失敗');
-  } catch (e) {
-    toast('儲存失敗：' + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = '儲存';
+function ytPreview(){
+  var id = ytId($('f_yt').value);
+  var p = $('ytPrev');
+  if(id){
+    remC(p,'hidden');
+    p.innerHTML = '<iframe src="https://www.youtube.com/embed/' + id + '" frameborder="0" allowfullscreen></iframe>';
+  }else{
+    addC(p,'hidden');
+    p.innerHTML = '';
   }
 }
+function closeForm(){
+  addC($('mw'),'hidden');
+  editId = null;
+}
 
-/* ═══ 刪除 ═══ */
-async function del(id) {
-  const r = data.find(x => x.id === id);
-  if (!r) return;
-  if (!confirm('確定刪除「' + (r.title || r.doc_no || '') + '」？\n刪除後無法復原（雲端附件檔不會被移除）。')) return;
-  data = data.filter(x => x.id !== id);
-  saveLocal(); markDirty(true); render();
-  const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true);
-  toast(ok ? '已刪除' : '已刪除（本機），雲端同步失敗');
+/* ═══ 儲存（先傳檔，再存記錄，最後立刻同步）═══ */
+function save(){
+  var btn = $('btnSave');
+  btn.disabled = true; btn.innerHTML = '處理中…';
+
+  var pdfFile = $('f_pdf').files[0];
+  var xlFile  = $('f_xl').files[0];
+  var rec = null, i;
+  if(editId){
+    for(i=0;i<data.length;i++){ if(data[i].id === editId){ rec = cloneObj(data[i]); break; } }
+  }
+  if(!rec){
+    rec = { id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+            created: Date.now() };
+  }
+
+  function done(){
+    btn.disabled = false; btn.innerHTML = '儲存';
+  }
+  function fail(msg){
+    toast(msg); done();
+  }
+
+  function uploadPdf(){
+    if(!pdfFile){ uploadXl(); return; }
+    uploadFile(pdfFile, function(url){
+      if(!url){ fail('PDF 上傳失敗，請檢查網路後重試'); return; }
+      rec.pdf_url = url; rec.pdf_name = pdfFile.name;
+      uploadXl();
+    });
+  }
+  function uploadXl(){
+    if(!xlFile){ commit(); return; }
+    uploadFile(xlFile, function(url){
+      if(!url){ fail('Excel 上傳失敗，請檢查網路後重試'); return; }
+      rec.excel_url = url; rec.excel_name = xlFile.name;
+      commit();
+    });
+  }
+  function commit(){
+    if(rmPdf){ rec.pdf_url = ''; rec.pdf_name = ''; }
+    if(rmXl){ rec.excel_url = ''; rec.excel_name = ''; }
+
+    rec.date        = $('f_date').value;
+    rec.title       = $('f_title').value.replace(/^\s+|\s+$/g,'');
+    rec.doc_no      = $('f_doc').value.replace(/^\s+|\s+$/g,'');
+    rec.machine_no  = $('f_machine').value.replace(/^\s+|\s+$/g,'');
+    rec.customer    = $('f_customer').value.replace(/^\s+|\s+$/g,'');
+    rec.category    = $('f_category').value.replace(/^\s+|\s+$/g,'');
+    rec.anomaly     = $('f_anomaly').value;
+    rec.improvement = $('f_improve').value;
+    rec.youtube     = $('f_yt').value.replace(/^\s+|\s+$/g,'');
+    rec.updated     = Date.now();
+    delete rec._del;
+
+    var replaced = false, j;
+    for(j=0;j<data.length;j++){
+      if(data[j].id === rec.id){ data[j] = rec; replaced = true; break; }
+    }
+    if(!replaced) data.unshift(rec);
+
+    saveLocal(); render(); closeForm(); done();
+    setStatus('🔄 上傳雲端…', false);
+    syncAll(true);
+    toast('已儲存，正在同步雲端…');
+  }
+
+  uploadPdf();
+}
+
+/* ═══ 刪除（軟刪除，讓刪除動作也能傳到其他裝置）═══ */
+function delRecord(id){
+  var r = null, i;
+  for(i=0;i<data.length;i++){ if(data[i].id === id){ r = data[i]; break; } }
+  if(!r) return;
+  if(!confirm('確定刪除「' + (r.title || r.doc_no || '未命名') + '」？\n\n刪除後會同步到所有裝置。')) return;
+
+  r._del = 1;
+  r.updated = Date.now();
+  saveLocal(); render();
+  setStatus('🔄 刪除同步中…', false);
+  syncAll(true);
+  toast('已刪除，正在同步到所有裝置…');
 }
 
 /* ═══ 匯出備份 ═══ */
-function exportJson() {
-  if (!data.length) { toast('目前沒有資料可匯出'); return; }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
+function exportJson(){
+  var out = [], i;
+  for(i=0;i<data.length;i++){ if(!data[i]._del) out.push(data[i]); }
+  if(!out.length){ toast('目前沒有資料可匯出'); return; }
+  var blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
+  var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = '產品異常與改進_' + new Date().toISOString().slice(0, 10) + '.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  a.download = '產品異常與改進_' + today() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   toast('已匯出 JSON 備份');
 }
 
-loadData();
+/* ═══ 啟動 ═══ */
+(function init(){
+  var t = 'light';
+  try{ t = localStorage.getItem(LS_THEME) || 'light'; }catch(e){}
+  applyTheme(t);
+  CATS = loadCats();
+  renderCatTags();
+  data = readLocal();
+  render();
+  syncAll(true);
+
+  /* 每 20 秒自動拉一次；切回前景也拉 */
+  setInterval(pullOnly, 20000);
+  if(document.addEventListener){
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden) syncAll(true);
+    }, false);
+  }
+  window.onfocus = function(){ syncAll(true); };
+})();
 </script>
 </body>
 </html>
