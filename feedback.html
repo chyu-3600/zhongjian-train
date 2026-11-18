@@ -54,6 +54,9 @@
   .replyedit { margin-top:9px; padding:10px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:9px; }
   .replyedit textarea { min-height:70px; }
   .replyedit .acts { display:flex; gap:8px; margin-top:8px; }
+  .rerow { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .rerow input[type=text] { flex:1; min-width:120px; padding:6px 9px; }
+  .rerow input[type=date] { width:155px; padding:6px 9px; }
   .item .adm { float:right; margin-right:6px; color:#166534; border:1px solid #bbf7d0; background:#fff; border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
   /* 圖片預覽與縮圖 */
   .imgprev { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
@@ -597,7 +600,8 @@ function renderList() {
         rb.className = 'replybox';
         var rh = document.createElement('div');
         rh.className = 'rh';
-        rh.appendChild(document.createTextNode('👤 管理者回覆' + (it.replyAt ? ' · ' + stamp2(it.replyAt) : '')));
+        rh.appendChild(document.createTextNode(
+          '👤 ' + (it.replier || '管理者') + ' 回覆' + (it.replyAt ? ' · ' + md(it.replyAt) : '')));
         rb.appendChild(rh);
         var rt = document.createElement('div');
         rt.className = 'rt';
@@ -610,6 +614,23 @@ function renderList() {
       if (isAdmin() && editingId === it.id) {
         var ed = document.createElement('div');
         ed.className = 'replyedit';
+
+        /* 回覆者姓名 ＋ 月／日 */
+        var rrow = document.createElement('div');
+        rrow.className = 'rerow';
+        var nmIn = document.createElement('input');
+        nmIn.id = 'replierName';
+        nmIn.type = 'text';
+        nmIn.placeholder = '回覆者姓名';
+        nmIn.value = it.replier || getReplier();
+        rrow.appendChild(nmIn);
+        var dtIn = document.createElement('input');
+        dtIn.id = 'replierDate';
+        dtIn.type = 'date';
+        dtIn.value = it.replyAt ? toDateInput(it.replyAt) : todayInput();
+        rrow.appendChild(dtIn);
+        ed.appendChild(rrow);
+
         var ta = document.createElement('textarea');
         ta.id = 'replyText';
         ta.rows = 4;
@@ -635,24 +656,64 @@ function renderList() {
     })(view[k]);
   }
 }
+/* 回覆者姓名（記住上次填的）＋ 月／日 */
+var REPLIER_KEY = 'fb_replier';
+function getReplier() {
+  try { return localStorage.getItem(REPLIER_KEY) || ''; } catch (e) { return ''; }
+}
+function todayInput() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function toDateInput(ts) {
+  var d = new Date(ts);
+  if (isNaN(d.getTime())) return todayInput();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function md(ts) {
+  if (!ts) return '';
+  var d = new Date(ts);
+  if (isNaN(d.getTime())) return '';
+  return (d.getMonth() + 1) + '/' + d.getDate();
+}
+
 function stamp2(ts) {
   if (!ts) return '';
   var d = new Date(ts);
   if (isNaN(d.getTime())) return String(ts);
   return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
-/* 儲存管理者回覆（留空＝取消回覆）*/
+/* 儲存管理者回覆（留空＝取消回覆）；同時記錄回覆者姓名與日期 */
 function saveReply(it) {
   var ta = gid('replyText');
   var txt = ta ? ta.value.replace(/^\s+|\s+$/g, '') : '';
+  var nmIn = gid('replierName');
+  var who = nmIn ? nmIn.value.replace(/^\s+|\s+$/g, '') : '';
+  var dtIn = gid('replierDate');
+  var picked = dtIn ? dtIn.value : '';
+
+  var ts = 0;
+  if (picked) {
+    if (picked === todayInput()) {
+      ts = Date.now();                      /* 選今天 → 記實際時間，顯示仍只有月／日 */
+    } else {
+      var pd = new Date(picked + 'T00:00:00');
+      ts = isNaN(pd.getTime()) ? Date.now() : pd.getTime();
+    }
+  }
+
   it.reply = txt;
-  it.replyAt = txt ? Date.now() : 0;
+  it.replier = txt ? (who || it.replier || '管理者') : (who || '');
+  it.replyAt = txt ? (ts || Date.now()) : 0;
   it.replied = !!txt;
+
+  if (who) { try { localStorage.setItem(REPLIER_KEY, who); } catch (e) {} }
+
   editingId = '';
   save();
   renderList();
   saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
-  if (txt) alert('已回覆。提問者下次開啟此頁（或按「🔄 同步」）就會看到。');
+  if (txt) alert('已回覆（' + it.replier + ' · ' + md(it.replyAt) + '）。提問者下次開啟此頁（或按「🔄 同步」）就會看到。');
 }
 function submitFb() {
   var name = gid('f_name').value.replace(/^\s+|\s+$/g, '');
@@ -787,7 +848,7 @@ function exportFb() {
     if (it.imgs && it.imgs.length) {
       for (var q = 0; q < it.imgs.length; q++) lines.push('圖片：' + it.imgs[q]);
     }
-    if (it.reply) lines.push('管理者回覆（' + stamp2(it.replyAt) + '）：' + it.reply);
+    if (it.reply) lines.push('回覆（' + (it.replier || '管理者') + ' ' + md(it.replyAt) + '）：' + it.reply);
     lines.push('');
   }
   var txt = lines.join('\n');
