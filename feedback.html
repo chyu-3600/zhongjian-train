@@ -55,6 +55,14 @@
   .replyedit textarea { min-height:70px; }
   .replyedit .acts { display:flex; gap:8px; margin-top:8px; }
   .item .adm { float:right; margin-right:6px; color:#166534; border:1px solid #bbf7d0; background:#fff; border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
+  /* 圖片預覽與縮圖 */
+  .imgprev { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .imgprev .p { position:relative; width:66px; height:66px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1; background:#fff; }
+  .imgprev .p img { width:100%; height:100%; object-fit:cover; display:block; }
+  .imgnote { font-size:11px; color:#6b7280; margin-top:6px; }
+  .imgs { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .imgs .thumb { width:82px; height:82px; border-radius:8px; overflow:hidden; border:1px solid #e5e7eb; display:block; background:#fff; }
+  .imgs .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 </style>
 </head>
 <body>
@@ -82,6 +90,9 @@
     <textarea id="f_desc" rows="5" placeholder="請描述問題或建議..."></textarea>
     <label>附件（PDF，選填，上限 20MB）</label>
     <input id="f_file" type="file" accept="application/pdf">
+    <label>圖片（選填，可多張，<b>上傳前自動壓縮</b>）</label>
+    <input id="f_img" type="file" accept="image/*" multiple onchange="previewImgs()">
+    <div class="imgprev" id="imgPrev"></div>
     <div style="margin-top:14px;">
       <button class="btn primary" id="btnSubmit" onclick="submitFb()">送出</button>
     </div>
@@ -219,6 +230,7 @@ function load() {
     if (!list[i].id) { list[i].id = newId(); changed = true; }
     if (typeof list[i].replied !== 'boolean') { list[i].replied = false; changed = true; }
     if (typeof list[i].pdf !== 'string') { list[i].pdf = ''; changed = true; }
+    if (Object.prototype.toString.call(list[i].imgs) !== '[object Array]') { list[i].imgs = []; changed = true; }
   }
   if (changed) save();
 }
@@ -288,6 +300,104 @@ function uploadPdf(file, cb) {
   xhr.onerror = function () { cb(''); };
   xhr.ontimeout = function () { cb(''); };
   xhr.send(file);
+}
+/* ═══ 圖片：前端壓縮後才上傳（省流量、省 storage）═══
+   規則：長邊最大 1600px、JPEG 品質 0.8；
+        若壓完反而比原檔大（本來就很小的圖），就上傳原檔。
+*/
+function compressImage(file, cb) {
+  if (!/^image\//.test(file.type || '')) { cb(null); return; }
+  var MAX = 1600, Q = 0.8;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var img = new Image();
+    img.onload = function () {
+      var w = img.naturalWidth || img.width;
+      var h = img.naturalHeight || img.height;
+      if (!w || !h) { cb({ file: file, dataUrl: '', bytes: file.size }); return; }
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      var ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var dataUrl = '';
+      try { dataUrl = cv.toDataURL('image/jpeg', Q); } catch (err) { dataUrl = ''; }
+      if (!dataUrl) { cb({ file: file, dataUrl: '', bytes: file.size }); return; }
+      var bytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 3 / 4);
+      if (bytes >= file.size && /image\/jpe?g/i.test(file.type || '')) {
+        /* 壓完沒變小 → 直接用原檔 */
+        cb({ file: file, dataUrl: '', bytes: file.size });
+      } else {
+        cb({ file: null, dataUrl: dataUrl, bytes: bytes });
+      }
+    };
+    img.onerror = function () { cb(null); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function () { cb(null); };
+  reader.readAsDataURL(file);
+}
+function dataUrlToBlob(dataUrl) {
+  try {
+    var parts = dataUrl.split(',');
+    var mm = parts[0].match(/:(.*?);/);
+    var mime = mm ? mm[1] : 'image/jpeg';
+    var bin = atob(parts[1]);
+    var len = bin.length;
+    var arr = new Uint8Array(len);
+    for (var i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  } catch (e) { return null; }
+}
+function uploadBlob(blob, ext, cb) {
+  if (!blob) { cb(''); return; }
+  var path = 'feedback/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', SB_URL + '/storage/v1/object/media/' + path, true);
+  xhr.setRequestHeader('apikey', SB_ANON);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + SB_ANON);
+  xhr.setRequestHeader('Content-Type', blob.type || 'application/octet-stream');
+  xhr.setRequestHeader('x-upsert', 'true');
+  xhr.timeout = 60000;
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status >= 200 && xhr.status < 300) cb(SB_URL + '/storage/v1/object/public/media/' + path);
+    else cb('');
+  };
+  xhr.onerror = function () { cb(''); };
+  xhr.ontimeout = function () { cb(''); };
+  xhr.send(blob);
+}
+function pickedImgs() {
+  var fi = gid('f_img');
+  var out = [], i;
+  if (fi && fi.files) { for (i = 0; i < fi.files.length; i++) out.push(fi.files[i]); }
+  return out;
+}
+function previewImgs() {
+  var box = gid('imgPrev');
+  var imgs = pickedImgs();
+  if (!box) return;
+  while (box.firstChild) box.removeChild(box.firstChild);
+  if (!imgs.length) return;
+  var total = 0, i;
+  for (i = 0; i < imgs.length; i++) {
+    total += imgs[i].size || 0;
+    var d = document.createElement('div');
+    d.className = 'p';
+    var im = document.createElement('img');
+    try { im.src = URL.createObjectURL(imgs[i]); } catch (e) {}
+    d.appendChild(im);
+    box.appendChild(d);
+  }
+  var note = document.createElement('div');
+  note.className = 'imgnote';
+  note.appendChild(document.createTextNode(
+    '已選 ' + imgs.length + ' 張，原始共 ' + (Math.round(total / 1024)) + ' KB；送出時會自動壓縮。'));
+  box.appendChild(note);
 }
 /* 刪除紀錄時順手清掉 storage 實體檔（best-effort，失敗不影響流程） */
 function deletePdf(url) {
@@ -461,6 +571,26 @@ function renderList() {
         item.appendChild(a);
       }
 
+      /* 圖片（點縮圖看大圖）*/
+      if (it.imgs && it.imgs.length) {
+        var g = document.createElement('div');
+        g.className = 'imgs';
+        for (var q = 0; q < it.imgs.length; q++) {
+          var th = document.createElement('a');
+          th.className = 'thumb';
+          th.href = it.imgs[q];
+          th.target = '_blank';
+          th.rel = 'noopener';
+          var im = document.createElement('img');
+          im.src = it.imgs[q];
+          im.loading = 'lazy';
+          im.alt = '附件圖片';
+          th.appendChild(im);
+          g.appendChild(th);
+        }
+        item.appendChild(g);
+      }
+
       /* 官方回覆區（提問者只會在自己那幾筆看到）*/
       if (it.reply) {
         var rb = document.createElement('div');
@@ -525,32 +655,81 @@ function saveReply(it) {
   if (txt) alert('已回覆。提問者下次開啟此頁（或按「🔄 同步」）就會看到。');
 }
 function submitFb() {
-  var name = document.getElementById('f_name').value.trim();
-  var desc = document.getElementById('f_desc').value.trim();
+  var name = gid('f_name').value.replace(/^\s+|\s+$/g, '');
+  var desc = gid('f_desc').value.replace(/^\s+|\s+$/g, '');
   if (!name) { alert('請填寫姓名'); return; }
   if (!desc) { alert('請填寫問題描述'); return; }
-  var fi = document.getElementById('f_file');
+
+  var fi = gid('f_file');
   var file = (fi && fi.files && fi.files[0]) ? fi.files[0] : null;
-  if (!file) { doSubmit(''); return; }
-  if (!/\.pdf$/i.test(file.name)) { alert('附件只支援 PDF'); return; }
-  if (file.size > 20 * 1024 * 1024) { alert('PDF 大小上限 20MB'); return; }
-  var btn = document.getElementById('btnSubmit');
+  if (file) {
+    if (!/\.pdf$/i.test(file.name)) { alert('附件只支援 PDF'); return; }
+    if (file.size > 20 * 1024 * 1024) { alert('PDF 大小上限 20MB'); return; }
+  }
+  var imgs = pickedImgs();
+  if (imgs.length > 12) { alert('圖片最多 12 張，請分批送出'); return; }
+
+  var btn = gid('btnSubmit');
+  var oldTxt = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '上傳中…';
-  uploadPdf(file, function (url) {
+
+  var pdfUrl = '', imgUrls = [], idx = 0, imgFail = 0;
+  var origBytes = 0, newBytes = 0, i;
+  for (i = 0; i < imgs.length; i++) origBytes += imgs[i].size || 0;
+
+  function finish() {
     btn.disabled = false;
-    btn.textContent = '送出';
-    if (!url) { alert('PDF 上傳失敗——內容尚未送出，請重試或先不加附件送出'); return; }
-    doSubmit(url);
-  });
+    btn.textContent = oldTxt;
+    if (imgs.length) {
+      var kb = Math.round((origBytes - newBytes) / 1024);
+      if (kb > 0) { try { console.log('壓縮省下 ' + kb + ' KB'); } catch (e) {} }
+    }
+    if (imgFail) alert('有 ' + imgFail + ' 張圖片上傳失敗，其餘已送出。');
+    doSubmit(pdfUrl, imgUrls);
+  }
+  function fail(msg) {
+    btn.disabled = false;
+    btn.textContent = oldTxt;
+    alert(msg);
+  }
+  function nextImg() {
+    if (idx >= imgs.length) { finish(); return; }
+    var f = imgs[idx++];
+    btn.textContent = '壓縮上傳 ' + idx + '/' + imgs.length + '…';
+    compressImage(f, function (r) {
+      if (!r) { imgFail++; nextImg(); return; }
+      newBytes += r.bytes || 0;
+      var m = f.name.match(/\.(\w+)$/);
+      var ext = r.file ? (m ? m[1].toLowerCase() : 'jpg') : 'jpg';
+      var blob = r.file ? r.file : dataUrlToBlob(r.dataUrl);
+      if (!blob) { imgFail++; nextImg(); return; }
+      uploadBlob(blob, ext, function (u) {
+        if (u) imgUrls.push(u); else imgFail++;
+        nextImg();
+      });
+    });
+  }
+  function stepPdf() {
+    if (!file) { nextImg(); return; }
+    btn.textContent = '上傳 PDF…';
+    uploadPdf(file, function (url) {
+      if (!url) { fail('PDF 上傳失敗——內容尚未送出，請重試或先不加附件送出'); return; }
+      pdfUrl = url;
+      nextImg();
+    });
+  }
+  stepPdf();
 }
-function doSubmit(pdfUrl) {
+function doSubmit(pdfUrl, imgUrls) {
   var name = document.getElementById('f_name').value.trim();
   var cat = document.getElementById('f_cat').value;
   var pri = document.getElementById('f_pri').value;
   var desc = document.getElementById('f_desc').value.trim();
   if (!name || !desc) { alert('請填寫姓名與問題描述'); return; }
-  list.push({ id: newId(), ts: Date.now(), name: name, cat: cat, pri: pri, desc: desc, replied: false, pdf: pdfUrl || '' });
+  list.push({
+    id: newId(), ts: Date.now(), name: name, cat: cat, pri: pri, desc: desc,
+    replied: false, pdf: pdfUrl || '', imgs: imgUrls || []
+  });
   save();
   /* 第一次送出時，自動把姓名記成本機身分，之後只看得到自己的 */
   if (!meName) {
@@ -561,6 +740,8 @@ function doSubmit(pdfUrl) {
   document.getElementById('f_name').value = '';
   document.getElementById('f_desc').value = '';
   var fi = document.getElementById('f_file'); if (fi) fi.value = '';
+  var gi = document.getElementById('f_img'); if (gi) gi.value = '';
+  previewImgs();
   renderList();
   submitToCloud(function (ok) {
     markDirty(!ok);
@@ -576,13 +757,20 @@ function delOne(it) {
   if (idx < 0) return;
   list.splice(idx, 1); save(); renderList();
   if (it.pdf) deletePdf(it.pdf);
+  if (it.imgs && it.imgs.length) {
+    for (var q = 0; q < it.imgs.length; q++) deletePdf(it.imgs[q]);
+  }
   saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
 }
 function clearFb() {
   if (!isAdmin()) return;
   if (!confirm('清除全部回報資料？此動作無法復原')) return;
   for (var i = 0; i < list.length; i++) {
-    if (list[i] && list[i].pdf) deletePdf(list[i].pdf);
+    if (!list[i]) continue;
+    if (list[i].pdf) deletePdf(list[i].pdf);
+    if (list[i].imgs && list[i].imgs.length) {
+      for (var q = 0; q < list[i].imgs.length; q++) deletePdf(list[i].imgs[q]);
+    }
   }
   list = []; save(); renderList();
   saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
@@ -596,6 +784,9 @@ function exportFb() {
     lines.push('[' + stamp2(it.ts) + '] ' + it.name + ' / ' + it.cat + ' / ' + it.pri + ' / ' + (isReplied(it) ? '已回覆' : '待回覆'));
     lines.push(it.desc);
     if (it.pdf) lines.push('附件：' + it.pdf);
+    if (it.imgs && it.imgs.length) {
+      for (var q = 0; q < it.imgs.length; q++) lines.push('圖片：' + it.imgs[q]);
+    }
     if (it.reply) lines.push('管理者回覆（' + stamp2(it.replyAt) + '）：' + it.reply);
     lines.push('');
   }
