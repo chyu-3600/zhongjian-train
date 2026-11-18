@@ -88,6 +88,9 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 .toast{position:fixed;left:50%;bottom:24px;margin-left:-50%;transform:translateY(140px);background:rgba(30,25,60,.92);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;z-index:200;transition:transform .35s;max-width:86vw;text-align:center;pointer-events:none}
 .toast.show{transform:translateY(0)}
 .hidden{display:none!important}
+.diagbar{display:flex;align-items:center;gap:8px;margin:-4px 0 12px;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace}
+.diagbar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.diagpre{font-size:11px;line-height:1.7;font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;max-height:190px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin:0 0 12px}
 </style>
 </head>
 <body>
@@ -96,7 +99,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
     <div class="hl">
       <div class="ic">⚠️</div>
       <div>
-        <div class="ht">產品異常與改進 <span style="font-size:10px;color:var(--accent);vertical-align:middle">v20261118-NEW</span></div>
+        <div class="ht">產品異常與改進 <span style="font-size:10px;color:var(--accent);vertical-align:middle">v20261118-P1</span></div>
         <div class="hs" id="sync">載入中…</div>
       </div>
     </div>
@@ -110,9 +113,12 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
     <button class="btn" onclick="exportJson()">匯出備份</button>
   </div>
 
+  <div class="diagbar"><span id="diag">☁️ 準備中…</span><button class="mini" onclick="toggleDiag()">詳細</button></div>
+  <pre class="diagpre hidden" id="diagPre"></pre>
+
   <div id="list"></div>
   <div class="empty hidden" id="empty">尚無記錄，按「＋ 新增記錄」建立第一筆</div>
-  <div class="footer">產品異常與改進 · PDF／Excel 存雲端 · 跨裝置自動同步 · <span style="color:var(--accent);font-weight:700">v20261118-NEW</span></div>
+  <div class="footer">產品異常與改進 · PDF／Excel 存雲端 · 跨裝置自動同步 · <span style="color:var(--accent);font-weight:700">v20261118-P1</span></div>
 </div>
 
 <div class="mw hidden" id="mw" onclick="if(event.target===this)closeForm()">
@@ -167,7 +173,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   產品異常與改進  v20261118-NEW
+   產品異常與改進  v20261118-P1
    規範：純 ES5（var / function / XMLHttpRequest）
         不用 fetch、不用箭頭函式、不用 async/await、不用 Promise
         → 舊 Android WebView 也能跑
@@ -280,14 +286,45 @@ function saveCats(){
   try{ localStorage.setItem(LS_CATS, JSON.stringify(CATS)); }catch(e){}
 }
 
-/* ═══ 雲端通訊：XMLHttpRequest（不用 fetch）═══ */
-function sbReq(method, path, body, headers, cb){
+/* ═══ 雲端通道 ═══
+   路徑 A（優先）：同源代理 /api/sync  → 由 Vercel Function 代打 Supabase
+      · 手機 App 的 WebView 常擋「跨網域連外」，同源請求不會被擋
+      · 也不會有 CORS 問題
+   路徑 B（備援）：直連 Supabase（代理不存在時自動退回）
+*/
+var useProxy = true;
+var CH_NAME = '?';
+
+/* 診斷紀錄（把失敗原因秀在畫面上，不再靠猜）*/
+var diagLog = [];
+function diagAdd(s){
+  diagLog.push(nowTime() + '  ' + s);
+  if(diagLog.length > 40) diagLog.shift();
+  renderDiag();
+}
+function renderDiag(){
+  var bar = $('diag'), pre = $('diagPre');
+  if(!bar) return;
+  var last = diagLog.length ? diagLog[diagLog.length - 1] : '☁️ 準備中…';
+  bar.innerHTML = esc(last);
+  if(pre){
+    var h = '', i;
+    for(i = diagLog.length - 1; i >= 0; i--){ h += esc(diagLog[i]) + '\n'; }
+    pre.innerHTML = esc(h);
+  }
+}
+function toggleDiag(){
+  var pre = $('diagPre');
+  if(pre) togC(pre, 'hidden');
+}
+
+function sbDirect(method, path, body, headers, cb){
   var xhr = new XMLHttpRequest();
-  var finished = false;
-  function fin(ok, status, json){
-    if(finished) return;
-    finished = true;
-    cb({ ok: ok, status: status, json: json });
+  var fin = false, t0 = Date.now();
+  function done(ok, status, json, err){
+    if(fin) return;
+    fin = true;
+    cb({ ok: ok, status: status, json: json, ms: Date.now() - t0, err: err || '' });
   }
   try{
     xhr.open(method, SB_URL + path, true);
@@ -303,20 +340,76 @@ function sbReq(method, path, body, headers, cb){
       if(xhr.readyState !== 4) return;
       var json = null;
       try{ json = JSON.parse(xhr.responseText); }catch(e){}
-      fin(xhr.status >= 200 && xhr.status < 300, xhr.status, json);
+      done(xhr.status >= 200 && xhr.status < 300, xhr.status, json, '');
     };
-    xhr.ontimeout = function(){ fin(false, 0, null); };
-    xhr.onerror   = function(){ fin(false, 0, null); };
+    xhr.ontimeout = function(){ done(false, 0, null, '逾時'); };
+    xhr.onerror   = function(){ done(false, 0, null, '網路被封鎖'); };
     xhr.send(body === null || body === undefined ? null : body);
   }catch(e){
-    fin(false, 0, null);
+    done(false, 0, null, 'XHR:' + e.message);
   }
+}
+
+function sbProxy(method, path, body, headers, cb){
+  var t0 = Date.now();
+  var payload = JSON.stringify({
+    m: method,
+    p: path,
+    b: (body === null || body === undefined) ? null : body,
+    h: headers || null
+  });
+  var xhr = new XMLHttpRequest();
+  var fin = false;
+  function done(r){ if(fin) return; fin = true; cb(r); }
+  try{
+    xhr.open('POST', '/api/sync', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.timeout = 25000;
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState !== 4) return;
+      /* 404/405/0 → 沒有這個 Function，退回直連 */
+      if(xhr.status === 404 || xhr.status === 405 || xhr.status === 0){
+        done({ __fallback: true, ms: Date.now() - t0 });
+        return;
+      }
+      var j = null;
+      try{ j = JSON.parse(xhr.responseText); }catch(e){}
+      if(!j){ done({ __fallback: true, ms: Date.now() - t0 }); return; }
+      done({ ok: !!j.ok, status: j.status || 0, json: j.body,
+             ms: Date.now() - t0, err: j.net ? '代理連外失敗' : '' });
+    };
+    xhr.ontimeout = function(){ done({ __fallback: true, ms: Date.now() - t0 }); };
+    xhr.onerror   = function(){ done({ __fallback: true, ms: Date.now() - t0 }); };
+    xhr.send(payload);
+  }catch(e){
+    done({ __fallback: true, ms: Date.now() - t0 });
+  }
+}
+
+function sbReq(method, path, body, headers, cb){
+  /* 附件上傳（binary）一律直連，不繞代理 */
+  if(useProxy && path.indexOf('/storage/') !== 0){
+    sbProxy(method, path, body, headers, function(r){
+      if(r && r.__fallback){
+        useProxy = false;
+        CH_NAME = '直連';
+        diagAdd('⚠️ 同源代理不可用 → 改用直連');
+        sbDirect(method, path, body, headers, function(r2){ CH_NAME = '直連'; cb(r2); });
+        return;
+      }
+      CH_NAME = '代理';
+      cb(r);
+    });
+    return;
+  }
+  sbDirect(method, path, body, headers, function(r){ CH_NAME = '直連'; cb(r); });
 }
 
 /* 讀雲端：回傳陣列；讀不到（網路錯）回傳 null */
 function cloudPull(cb){
   sbReq('GET', '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data',
     null, null, function(r){
+      diagAdd('讀 ' + CH_NAME + ' HTTP ' + (r.status || 'X') + ' · ' + (r.ok ? 'OK' : ('FAIL ' + (r.err || ''))) + ' · ' + r.ms + 'ms');
       if(!r.ok){ cb(null); return; }
       var rows = r.json;
       if(rows && rows.length && rows[0] &&
@@ -334,6 +427,7 @@ function cloudPush(arr, cb){
   sbReq('PATCH', '/rest/v1/tool_storage?key=eq.' + SB_KEY, payload,
     { 'Content-Type':'application/json', 'Prefer':'return=representation' },
     function(r){
+      diagAdd('寫 ' + CH_NAME + ' HTTP ' + (r.status || 'X') + ' · ' + (r.ok ? 'OK' : ('FAIL ' + (r.err || ''))) + ' · ' + r.ms + 'ms · ' + arr.length + '筆');
       if(r.ok && r.json && r.json.length){ cb(true); return; }
       if(!r.ok && r.status !== 404 && r.status !== 406){
         /* 真正失敗（權限／網路）→ 不再硬 POST */
@@ -343,7 +437,10 @@ function cloudPush(arr, cb){
         JSON.stringify({ key: SB_KEY, data: arr }),
         { 'Content-Type':'application/json',
           'Prefer':'resolution=merge-duplicates,return=representation' },
-        function(r2){ cb(r2.ok); });
+        function(r2){
+          diagAdd('寫 ' + CH_NAME + ' (POST建立列) HTTP ' + (r2.status || 'X') + ' · ' + (r2.ok ? 'OK' : 'FAIL'));
+          cb(r2.ok);
+        });
     });
 }
 
