@@ -207,6 +207,42 @@ td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
   </header>
   <div id="offlineBar" class="offline-bar hidden">當前離線，顯示的是快取資料</div>
   <main class="wrap">
+    <!-- ═══ 公告區（最上方，雲端同步；管理員可發佈／刪除）═══ -->
+    <style>
+      .ann-box{margin:0 0 14px;background:var(--card,#fff);border:1px solid var(--border,#e5e7eb);border-left:5px solid #dc2626;border-radius:12px;padding:12px 14px}
+      .ann-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+      .ann-title{font-size:14px;font-weight:800;color:#dc2626}
+      .ann-mini{font-size:12px;font-weight:700;border:1px solid var(--border,#e5e7eb);background:transparent;color:#dc2626;border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit}
+      .ann-list{display:flex;flex-direction:column;gap:6px}
+      .ann-item{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;line-height:1.6;padding:6px 0;border-top:1px dashed var(--border,#e5e7eb)}
+      .ann-item:first-child{border-top:0;padding-top:0}
+      .ann-date{flex-shrink:0;font-size:11px;font-weight:800;color:#fff;background:#dc2626;border-radius:6px;padding:1px 7px;margin-top:2px}
+      .ann-text{flex:1;white-space:pre-wrap;word-break:break-word;color:var(--fg,#1f2937)}
+      .ann-del{flex-shrink:0;font-size:11px;border:1px solid #fecaca;background:transparent;color:#dc2626;border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit}
+      .ann-empty{font-size:13px;color:var(--muted,#9ca3af);padding:4px 0}
+      .ann-edit{margin-top:8px;padding:10px;border:1px dashed var(--border,#cbd5e1);border-radius:9px}
+      .ann-edit textarea{width:100%;padding:8px 10px;border:1px solid var(--border,#cbd5e1);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;background:transparent;color:var(--fg,#1f2937);outline:none}
+      .ann-actions{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+      .ann-btn{font-size:13px;font-weight:700;border:1px solid var(--border,#cbd5e1);background:transparent;color:var(--fg,#1f2937);border-radius:8px;padding:6px 14px;cursor:pointer;font-family:inherit}
+      .ann-btn.primary{background:#dc2626;border-color:#dc2626;color:#fff}
+      .ann-btn:disabled{opacity:.6;cursor:wait}
+      .ann-tip{font-size:12px;color:#dc2626}
+    </style>
+    <div id="annBox" class="ann-box hidden">
+      <div class="ann-head">
+        <span class="ann-title">📢 公告</span>
+        <button class="ann-mini" id="annAdminBtn" onclick="annToggleEdit()">＋ 發佈公告</button>
+      </div>
+      <div id="annList" class="ann-list"></div>
+      <div id="annEdit" class="ann-edit hidden">
+        <textarea id="annText" rows="3" placeholder="輸入公告內容（可多行，例：11/20 上午 8:00 全廠停機保養）"></textarea>
+        <div class="ann-actions">
+          <button class="ann-btn primary" id="annSaveBtn" onclick="annSave()">發佈</button>
+          <button class="ann-btn" onclick="annCancel()">取消</button>
+          <span class="ann-tip" id="annTip"></span>
+        </div>
+      </div>
+    </div>
     <div class="searchbar">
       <span class="s-ico">🔍</span>
       <input id="kwInput" placeholder="搜尋課程名稱、內容、分類…" autocomplete="off" oninput="onSearch()">
@@ -955,6 +991,141 @@ function makeIcon(size) {
   } catch (e) { console.warn('manifest 生成失敗', e); }
 })();
 
+/* ══════════════════ 9.5 首頁公告（雲端同步）══════════════════ */
+const ANN_KEY = 'announcements';
+const ANN_LS = 'tr_anns';
+let ANNS = [];
+let annEditId = '';
+
+function annDate(ts) {
+  const d = new Date(ts || Date.now());
+  if (isNaN(d.getTime())) return '';
+  return (d.getMonth() + 1) + '/' + d.getDate();
+}
+const annSort = arr => arr.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+/* 合併：同 id 新版勝、任一邊標記刪除就刪除（避免刪了又跑回來）*/
+function annMerge(localArr, cloudArr) {
+  const map = new Map();
+  [...(cloudArr || []), ...(localArr || [])].forEach(x => {
+    if (!x || !x.id) return;
+    const prev = map.get(x.id);
+    if (!prev) { map.set(x.id, { ...x }); return; }
+    const win = (x.ts || 0) >= (prev.ts || 0) ? { ...prev, ...x } : prev;
+    if (prev.del || x.del) win.del = 1;
+    map.set(x.id, win);
+  });
+  return [...map.values()];
+}
+
+async function annLoad() {
+  let cloud = null;
+  try {
+    const r = await fetch(`${CONFIG.supabaseUrl}/rest/v1/tool_storage?key=eq.${ANN_KEY}&select=data`, { headers: SB_OK });
+    if (r.ok) {
+      const j = await r.json();
+      cloud = (j && j[0] && Array.isArray(j[0].data)) ? j[0].data : [];
+    }
+  } catch (e) { cloud = null; }
+  if (cloud) {
+    ANNS = annMerge(ANNS, cloud);
+  } else if (!ANNS.length) {
+    try { ANNS = JSON.parse(localStorage.getItem(ANN_LS) || '[]') || []; } catch (e) { ANNS = []; }
+  }
+  annRender();
+}
+
+async function annPush() {
+  try { localStorage.setItem(ANN_LS, JSON.stringify(ANNS)); } catch (e) {}
+  const body = JSON.stringify({ data: ANNS });
+  let r = await fetch(`${CONFIG.supabaseUrl}/rest/v1/tool_storage?key=eq.${ANN_KEY}`, {
+    method: 'PATCH',
+    headers: { ...SB_OK, Prefer: 'return=representation' },
+    body
+  });
+  if (r.ok) {
+    const j = await r.json();
+    if (j && j.length) return true;
+  }
+  r = await fetch(`${CONFIG.supabaseUrl}/rest/v1/tool_storage`, {
+    method: 'POST',
+    headers: { ...SB_OK, Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify({ key: ANN_KEY, data: ANNS })
+  });
+  return r.ok;
+}
+
+function annRender() {
+  const box = $('annBox');
+  if (!box) return;
+  const live = annSort(ANNS.filter(a => !a.del));
+  const adm = isAdmin();
+  const btn = $('annAdminBtn');
+  if (btn) btn.style.display = adm ? '' : 'none';
+  if (!live.length && !adm) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  $('annList').innerHTML = live.length
+    ? live.map(a =>
+        '<div class="ann-item">'
+        + '<span class="ann-date">' + annDate(a.ts) + '</span>'
+        + '<span class="ann-text">' + esc(a.text) + '</span>'
+        + (adm ? '<button class="ann-del" onclick="annDel(\'' + a.id + '\')">刪除</button>' : '')
+        + '</div>').join('')
+    : '<div class="ann-empty">目前沒有公告</div>';
+}
+
+function annToggleEdit() {
+  if (!isAdmin()) { toast('需要管理員權限'); return; }
+  const ed = $('annEdit');
+  if (!ed) return;
+  ed.classList.toggle('hidden');
+  if (!ed.classList.contains('hidden')) $('annText').focus();
+}
+
+function annCancel() {
+  $('annEdit').classList.add('hidden');
+  $('annText').value = '';
+  $('annTip').textContent = '';
+  annEditId = '';
+}
+
+async function annSave() {
+  if (!isAdmin()) return;
+  const ta = $('annText');
+  const txt = (ta.value || '').trim();
+  if (!txt) { $('annTip').textContent = '請先輸入內容'; ta.focus(); return; }
+  const btn = $('annSaveBtn');
+  btn.disabled = true;
+  $('annTip').textContent = '儲存中…';
+  const now = Date.now();
+  if (annEditId) {
+    const it = ANNS.find(a => a.id === annEditId);
+    if (it) { it.text = txt; it.ts = now; delete it.del; }
+    annEditId = '';
+  } else {
+    ANNS.push({ id: 'an' + now.toString(36) + Math.random().toString(36).slice(2, 6), text: txt, ts: now });
+  }
+  ta.value = '';
+  $('annEdit').classList.add('hidden');
+  annRender();
+  const ok = await annPush();
+  btn.disabled = false;
+  $('annTip').textContent = ok ? '' : '雲端同步失敗，已存本機';
+  toast(ok ? '公告已發佈（所有裝置都看得到）' : '公告已存本機，雲端同步失敗');
+}
+
+async function annDel(id) {
+  if (!isAdmin()) return;
+  if (!confirm('刪除這則公告？')) return;
+  const it = ANNS.find(a => a.id === id);
+  if (!it) return;
+  it.del = 1;
+  it.ts = Date.now();
+  annRender();
+  const ok = await annPush();
+  if (!ok) toast('刪除已記錄，雲端同步失敗');
+}
+
 /* ══════════════════ 10. 啟動 ══════════════════ */
 async function boot() {
   if (!session) session = { role: localStorage.getItem(LS.sess) || '' };
@@ -965,6 +1136,7 @@ async function boot() {
   await refreshData();
   if (lastReadOk && courses.length === 0) await seedDemo();
   renderAll();
+  annLoad();
 }
 boot();
 </script>
