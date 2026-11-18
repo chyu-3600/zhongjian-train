@@ -220,32 +220,48 @@ $('thBtn').onclick = function () {
   localStorage.setItem(LS_THEME, dark ? 'light' : 'dark');
 };
 
+/* ═══ 雲端通訊（XMLHttpRequest，相容舊環境；不用 fetch）═══ */
+function sbReq(method, path, body, headers, timeout) {
+  return new Promise(function (resolve) {
+    var xhr = new XMLHttpRequest();
+    xhr.open(method, SB_URL + path, true);
+    xhr.setRequestHeader('apikey', SB_ANON);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + SB_ANON);
+    var h = headers || {};
+    for (var k in h) { if (h.hasOwnProperty(k)) xhr.setRequestHeader(k, h[k]); }
+    xhr.timeout = timeout || 20000;
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState !== 4) return;
+      var json = null;
+      try { json = JSON.parse(xhr.responseText); } catch (e) { }
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json: json });
+    };
+    xhr.ontimeout = function () { resolve({ ok: false, status: 0, json: null }); };
+    xhr.onerror = function () { resolve({ ok: false, status: 0, json: null }); };
+    xhr.send(body == null ? null : body);
+  });
+}
+
 /* ═══ 雲端同步（tool_storage：PATCH 整列，不存在才 POST）═══ */
 async function loadFromCloud() {
   try {
-    const r = await fetch(SB_URL + '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data', {
-      headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON }
-    });
+    const r = await sbReq('GET', '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data', null, {}, 15000);
     if (!r.ok) return null;
-    const d = await r.json();
+    const d = r.json;
     if (d && d[0] && Array.isArray(d[0].data)) return d[0].data;
   } catch (e) { }
   return null;
 }
 async function saveToCloud(arr) {
-  const H = { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' };
   try {
-    let r = await fetch(SB_URL + '/rest/v1/tool_storage?key=eq.' + SB_KEY, {
-      method: 'PATCH', headers: { ...H, Prefer: 'return=representation' },
-      body: JSON.stringify({ data: arr })
-    });
-    if (!r.ok) throw 0;
-    const rows = await r.json();
-    if (Array.isArray(rows) && rows.length) return true;
-    r = await fetch(SB_URL + '/rest/v1/tool_storage', {
-      method: 'POST', headers: { ...H, Prefer: 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify({ key: SB_KEY, data: arr })
-    });
+    let r = await sbReq('PATCH', '/rest/v1/tool_storage?key=eq.' + SB_KEY,
+      JSON.stringify({ data: arr }),
+      { 'Content-Type': 'application/json', 'Prefer': 'return=representation' });
+    if (!r.ok) return false;
+    if (Array.isArray(r.json) && r.json.length) return true;
+    r = await sbReq('POST', '/rest/v1/tool_storage',
+      JSON.stringify({ key: SB_KEY, data: arr }),
+      { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' });
     return r.ok;
   } catch (e) { return false; }
 }
@@ -307,14 +323,8 @@ async function syncNow() {
 async function uploadFile(file) {
   const ext = (file.name.match(/\.(\w+)$/) || [, 'bin'])[1].toLowerCase();
   const path = 'anomaly/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-  const r = await fetch(SB_URL + '/storage/v1/object/media/' + path, {
-    method: 'POST',
-    headers: {
-      apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON,
-      'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true'
-    },
-    body: file
-  });
+  const r = await sbReq('POST', '/storage/v1/object/media/' + path, file,
+    { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' }, 60000);
   if (!r.ok) throw new Error('上傳失敗（' + r.status + '）');
   return SB_URL + '/storage/v1/object/public/media/' + path;
 }
