@@ -278,15 +278,29 @@ async function loadData() {
   }
   render();
 }
-/* 強制同步：以本機為準整包推上雲端（適合「別台看不到」時手動補傳）*/
+/* 雙向合併同步：抓雲端＋本機，用 id 去重合併後寫回兩邊（避免任一台覆蓋另一台）*/
 async function syncNow() {
   const btn = $('btnSync');
   btn.disabled = true; btn.textContent = '同步中…';
-  if (!data.length) { toast('目前沒有記錄可同步'); btn.disabled = false; btn.textContent = '🔄 同步'; return; }
-  const ok = await saveToCloud(data);
-  markDirty(!ok); syncUi(ok, true);
-  toast(ok ? '已強制同步到雲端' : '同步失敗，資料仍留在本機');
-  btn.disabled = false; btn.textContent = '🔄 同步';
+  try {
+    const local = readLocal();
+    const cloud = await loadFromCloud();
+    const map = {};
+    (cloud || []).forEach(function (r) { if (r && r.id) map[r.id] = r; });
+    local.forEach(function (r) { if (r && r.id) {
+      // 本機若有較新的 updated 就覆蓋，否則保留雲端版本
+      if (!map[r.id] || String(r.updated || '') >= String(map[r.id].updated || '')) map[r.id] = r;
+    } });
+    data = Object.keys(map).map(function (k) { return map[k]; });
+    saveLocal(); render();
+    const ok = await saveToCloud(data);
+    markDirty(!ok); syncUi(ok, true);
+    toast(ok ? '已同步：共 ' + data.length + ' 筆（本機＋雲端合併）' : '同步失敗，資料仍留在本機');
+  } catch (e) {
+    toast('同步失敗：' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🔄 同步';
+  }
 }
 
 /* ═══ 檔案上傳（Supabase storage bucket 'media'，路徑 anomaly/）═══ */
