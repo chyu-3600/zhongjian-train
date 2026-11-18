@@ -458,7 +458,6 @@ function closeForm() { $('mw').classList.add('hidden'); editId = null; }
 async function save() {
   const title = $('f_title').value.trim();
   const doc = $('f_doc').value.trim();
-  if (!title) { toast('請填標題'); $('f_title').focus(); return; }
   const btn = $('btnSave');
   btn.disabled = true; btn.textContent = '處理中…';
   try {
