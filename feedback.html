@@ -16,27 +16,52 @@
   label:first-child { margin-top:0; }
   .req { color:#dc2626; }
   input, select, textarea { width:100%; padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; font-family:inherit; }
+  input[type=file] { padding:6px 10px; background:#fff; }
   textarea { resize:vertical; }
   .btn { border:1px solid #cbd5e1; background:#fff; color:#1f2937; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer; }
   .btn:hover { background:#eef2ff; }
+  .btn:disabled { opacity:.6; cursor:default; }
   .btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
   .row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
   .row h2 { font-size:15px; margin:0; }
+  .syncst { font-size:12px; color:#6b7280; margin-right:6px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 2px; }
+  .fbtn.on { background:#2563eb; color:#fff; border-color:#2563eb; }
   .item { border:1px solid #e5e7eb; border-radius:10px; padding:11px 12px; margin-top:10px; }
   .item .meta { font-size:12px; color:#6b7280; margin-bottom:4px; }
   .badge { display:inline-block; font-size:11px; padding:1px 8px; border-radius:999px; margin-left:6px; }
   .badge.cat { background:#e0f2fe; color:#0369a1; }
   .badge.pri { background:#fee2e2; color:#991b1b; }
-  .item .desc { font-size:14px; white-space:pre-wrap; word-break:break-word; }
+  .badge.rep-open { background:#fef3c7; color:#92400e; }
+  .badge.rep-done { background:#dcfce7; color:#166534; }
+  .item .rep { float:right; margin-right:6px; color:#0369a1; border:1px solid #bae6fd; background:#fff; border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
   .item .del { float:right; color:#dc2626; border:1px solid #fecaca; background:#fff; border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
+  .item .desc { font-size:14px; white-space:pre-wrap; word-break:break-word; }
+  .pdflink { display:inline-block; margin-top:6px; font-size:13px; color:#2563eb; text-decoration:none; }
+  .pdflink:hover { text-decoration:underline; }
   .empty { color:#9ca3af; font-size:13px; padding:10px 0; }
+  /* 身分列／管理閘門 */
+  .ident { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:9px 11px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:9px; font-size:13px; }
+  .ident input { width:150px; padding:6px 9px; }
+  .who { font-size:12px; color:#166534; font-weight:700; }
+  .gate { display:none; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .gate input { width:130px; padding:6px 9px; }
+  .gate .gm { font-size:12px; color:#b91c1c; }
+  /* 官方回覆區 */
+  .replybox { margin-top:9px; padding:9px 11px; background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #16a34a; border-radius:8px; }
+  .replybox .rh { font-size:11px; color:#166534; font-weight:700; margin-bottom:3px; }
+  .replybox .rt { font-size:13px; color:#14532d; white-space:pre-wrap; word-break:break-word; }
+  .replyedit { margin-top:9px; padding:10px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:9px; }
+  .replyedit textarea { min-height:70px; }
+  .replyedit .acts { display:flex; gap:8px; margin-top:8px; }
+  .item .adm { float:right; margin-right:6px; color:#166534; border:1px solid #bbf7d0; background:#fff; border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
 </style>
 </head>
 <body>
 <div id="errbar"></div>
 <div class="wrap">
   <h1>💬 問題反饋</h1>
-  <p class="hint">填寫後會存在本機瀏覽器（localStorage），可匯出檔案交給管理員。未接後端，請勿填寫機密資料。</p>
+  <p class="hint">填寫送出後會永久保存到雲端資料庫（Supabase）——換電腦、清瀏覽器資料都不會遺失；離線時先存本機，恢復連線後自動補傳。<b>每個人只看得到自己填的回報與回覆</b>；管理者（密碼 3366）可看全部並回覆。</p>
 
   <div class="card">
     <label>姓名<span class="req">*</span></label>
@@ -55,18 +80,40 @@
     </select>
     <label>問題描述<span class="req">*</span></label>
     <textarea id="f_desc" rows="5" placeholder="請描述問題或建議..."></textarea>
+    <label>附件（PDF，選填，上限 20MB）</label>
+    <input id="f_file" type="file" accept="application/pdf">
     <div style="margin-top:14px;">
-      <button class="btn primary" onclick="submitFb()">送出</button>
+      <button class="btn primary" id="btnSubmit" onclick="submitFb()">送出</button>
     </div>
   </div>
 
   <div class="card">
     <div class="row">
-      <h2>已回報（<span id="cnt">0</span>）</h2>
+      <h2><span id="listTitle">我的回報</span>（<span id="cnt">0</span>）</h2>
       <span>
+        <span id="syncst" class="syncst">☁️ 連線中…</span>
+        <button class="btn" onclick="pullCloud()">🔄 同步</button>
         <button class="btn" onclick="exportFb()">⬇ 匯出</button>
-        <button class="btn" onclick="clearFb()">🗑 清除全部</button>
+        <button class="btn" id="btnClear" style="display:none" onclick="clearFb()">🗑 清除全部</button>
+        <button class="btn" id="btnAdmin" onclick="toggleGate()">🔑 管理</button>
       </span>
+    </div>
+    <div class="ident">
+      <span>👤 我是：</span>
+      <input id="meName" type="text" placeholder="輸入你的姓名" onkeydown="if(event.keyCode===13){setMe();}">
+      <button class="btn" onclick="setMe()">套用</button>
+      <span class="who" id="meNow"></span>
+    </div>
+    <div class="gate" id="gateRow">
+      <span>管理密碼：</span>
+      <input id="gatePwd" type="password" onkeydown="if(event.keyCode===13){doLogin();}">
+      <button class="btn primary" onclick="doLogin()">進入</button>
+      <span class="gm" id="gateMsg"></span>
+    </div>
+    <div class="filters">
+      <button class="btn fbtn on" id="f_all" onclick="setFilter('all')">全部</button>
+      <button class="btn fbtn" id="f_open" onclick="setFilter('open')">未回覆（<span id="cnt_open">0</span>）</button>
+      <button class="btn fbtn" id="f_done" onclick="setFilter('done')">已回覆（<span id="cnt_done">0</span>）</button>
     </div>
     <div id="list"></div>
   </div>
@@ -78,61 +125,384 @@ window.onerror = function (m, s, l, c) {
   return false;
 };
 
+/* ═══ 本機快取（離線緩衝，正式資料在雲端）═══ */
 var KEY = 'tr_feedback_v1';
+var DIRTY_KEY = 'tr_feedback_dirty';
 var list = [];
+var curFilter = 'all';
+
+/* ═══ 身分與管理權限 ═══
+   提問者：只顯示「姓名＝自己」的回報（本機記住姓名）
+   管理者：輸入 3366 可看全部、回覆、刪除
+*/
+var ME_KEY = 'fb_me';
+var ADMIN_KEY = 'fb_admin';
+var FB_PWD = '3366';
+var meName = '';
+var editingId = '';
+
+function gid(id) { return document.getElementById(id); }
+function getMe() { try { return localStorage.getItem(ME_KEY) || ''; } catch (e) { return ''; } }
+function isAdmin() { try { return sessionStorage.getItem(ADMIN_KEY) === '1'; } catch (e) { return false; } }
+function setAdmin(on) {
+  try { if (on) sessionStorage.setItem(ADMIN_KEY, '1'); else sessionStorage.removeItem(ADMIN_KEY); } catch (e) {}
+}
+function setMe() {
+  var el = gid('meName');
+  var v = el ? el.value.replace(/^\s+|\s+$/g, '') : '';
+  if (!v) { alert('請輸入姓名'); return; }
+  meName = v;
+  try { localStorage.setItem(ME_KEY, v); } catch (e) {}
+  updateIdent();
+  renderList();
+}
+function updateIdent() {
+  var now = gid('meNow'), inp = gid('meName'), t = gid('listTitle');
+  if (inp && meName && !inp.value) inp.value = meName;
+  if (now) now.textContent = isAdmin() ? '（管理模式：看全部）' : (meName ? '目前：' + meName : '尚未設定姓名');
+  if (t) t.textContent = isAdmin() ? '全部回報' : '我的回報';
+}
+function toggleGate() {
+  if (isAdmin()) { setAdmin(false); updateAdminUI(); renderList(); return; }
+  var g = gid('gateRow');
+  if (!g) return;
+  g.style.display = (g.style.display === 'flex') ? 'none' : 'flex';
+  if (g.style.display === 'flex') { var p = gid('gatePwd'); if (p) p.focus(); }
+}
+function doLogin() {
+  var p = gid('gatePwd'), msg = gid('gateMsg'), g = gid('gateRow');
+  var v = p ? p.value.replace(/^\s+|\s+$/g, '') : '';
+  if (v === FB_PWD) {
+    setAdmin(true);
+    if (p) p.value = '';
+    if (msg) msg.textContent = '';
+    if (g) g.style.display = 'none';
+    updateAdminUI(); renderList();
+  } else if (msg) {
+    msg.textContent = '密碼錯誤';
+  }
+}
+function updateAdminUI() {
+  var b = gid('btnAdmin'), c = gid('btnClear');
+  if (b) b.textContent = isAdmin() ? '🔓 登出管理' : '🔑 管理';
+  if (c) c.style.display = isAdmin() ? '' : 'none';
+  updateIdent();
+}
+/* 目前身分可見的資料 */
+function visibleList() {
+  var out = [], i;
+  if (isAdmin()) return list.slice();
+  if (!meName) return out;
+  for (i = 0; i < list.length; i++) {
+    if (list[i] && String(list[i].name || '').replace(/^\s+|\s+$/g, '') === meName) out.push(list[i]);
+  }
+  return out;
+}
+function isReplied(it) { return !!(it && (it.reply || it.replied)); }
+
+/* ═══ Supabase 雲端永久保存（與其他工具共用 tool_storage，key='feedback'）═══ */
+var SB_URL = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
+var SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
+var SB_KEY = 'feedback';
 
 function pad2(x) { return (x < 10 ? '0' : '') + x; }
-function stamp() {
-  var d = new Date();
-  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
-}
+function newId() { return 'fb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
 function load() {
   var raw = null;
   try { raw = localStorage.getItem(KEY); } catch (e) {}
   if (raw) { try { list = JSON.parse(raw); } catch (e) { list = []; } }
   if (!list) list = [];
+  /* 舊版資料補 id／replied／pdf 欄位（雲端合併比對用） */
+  var changed = false;
+  for (var i = 0; i < list.length; i++) {
+    if (!list[i]) continue;
+    if (!list[i].id) { list[i].id = newId(); changed = true; }
+    if (typeof list[i].replied !== 'boolean') { list[i].replied = false; changed = true; }
+    if (typeof list[i].pdf !== 'string') { list[i].pdf = ''; changed = true; }
+  }
+  if (changed) save();
 }
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {}
 }
+function markDirty(on) {
+  try { if (on) localStorage.setItem(DIRTY_KEY, '1'); else localStorage.removeItem(DIRTY_KEY); } catch (e) {}
+}
+function isDirty() {
+  try { return localStorage.getItem(DIRTY_KEY) === '1'; } catch (e) { return false; }
+}
+
+/* ═══ 雲端通訊（XMLHttpRequest，相容舊環境；不用 fetch／箭頭函式）═══ */
+function sbReq(method, path, body, prefer, cb) {
+  var xhr = new XMLHttpRequest();
+  xhr.open(method, SB_URL + path, true);
+  xhr.setRequestHeader('apikey', SB_ANON);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + SB_ANON);
+  if (body !== null) xhr.setRequestHeader('Content-Type', 'application/json');
+  if (prefer) xhr.setRequestHeader('Prefer', prefer);
+  xhr.timeout = 15000;
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    var json = null;
+    try { json = JSON.parse(xhr.responseText); } catch (e) {}
+    cb(xhr.status, json);
+  };
+  xhr.ontimeout = function () { cb(0, null); };
+  xhr.onerror = function () { cb(0, null); };
+  xhr.send(body === null ? null : body);
+}
+function loadFromCloud(cb) {
+  sbReq('GET', '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data', null, '', function (st, json) {
+    if (st === 200 && json && json[0] && Object.prototype.toString.call(json[0].data) === '[object Array]') cb(json[0].data);
+    else cb(null);
+  });
+}
+function saveToCloud(arr, cb) {
+  var payload = JSON.stringify({ data: arr });
+  sbReq('PATCH', '/rest/v1/tool_storage?key=eq.' + SB_KEY, payload, 'return=representation', function (st, json) {
+    if (st === 200 && json && json.length) { cb(true); return; }
+    /* 沒有這一列就新增（merge-duplicates 避免併發衝突） */
+    sbReq('POST', '/rest/v1/tool_storage', JSON.stringify({ key: SB_KEY, data: arr }), 'resolution=merge-duplicates,return=representation', function (st2) {
+      cb(st2 >= 200 && st2 < 300);
+    });
+  });
+}
+
+/* ═══ PDF 附件（Supabase storage bucket 'media'，路徑 feedback/）═══ */
+function uploadPdf(file, cb) {
+  var m = file.name.match(/\.(\w+)$/);
+  var ext = m ? m[1].toLowerCase() : 'pdf';
+  var path = 'feedback/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', SB_URL + '/storage/v1/object/media/' + path, true);
+  xhr.setRequestHeader('apikey', SB_ANON);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + SB_ANON);
+  xhr.setRequestHeader('Content-Type', file.type || 'application/pdf');
+  xhr.setRequestHeader('x-upsert', 'true');
+  xhr.timeout = 60000;
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status >= 200 && xhr.status < 300) cb(SB_URL + '/storage/v1/object/public/media/' + path);
+    else cb('');
+  };
+  xhr.onerror = function () { cb(''); };
+  xhr.ontimeout = function () { cb(''); };
+  xhr.send(file);
+}
+/* 刪除紀錄時順手清掉 storage 實體檔（best-effort，失敗不影響流程） */
+function deletePdf(url) {
+  if (!url) return;
+  var marker = '/storage/v1/object/public/media/';
+  var p = url.indexOf(marker);
+  if (p < 0) return;
+  sbReq('DELETE', '/storage/v1/object/media/' + url.slice(p + marker.length), null, '', function () {});
+}
+
+function recKey(r) {
+  if (!r) return '';
+  if (r.id) return r.id;
+  return (r.ts || '') + '|' + (r.name || '') + '|' + (r.desc || '');
+}
+function byTs(a, b) { return (a.ts || 0) - (b.ts || 0); }
+/* 送出前先拉雲端合併（避免兩人同時送出互相覆蓋），再整包上傳 */
+function submitToCloud(cb) {
+  loadFromCloud(function (cloud) {
+    var merged = list.slice();
+    if (cloud) {
+      var have = {};
+      for (var i = 0; i < merged.length; i++) have[recKey(merged[i])] = 1;
+      for (var j = 0; j < cloud.length; j++) {
+        if (!have[recKey(cloud[j])]) merged.push(cloud[j]);
+      }
+    }
+    merged.sort(byTs);
+    list = merged;
+    save();
+    renderList();
+    saveToCloud(list, cb);
+  });
+}
+function syncUi(ok, checked) {
+  var el = document.getElementById('syncst');
+  if (!el) return;
+  el.textContent = ok ? '☁️ 已同步到雲端（永久保存）'
+    : (checked ? '⚠️ 雲端同步失敗，資料先留本機，恢復連線後自動補傳' : '☁️ 連線中…');
+}
+function pullCloud() {
+  if (isDirty()) { alert('本機有未同步的變更，請先連線完成同步再拉取雲端'); return; }
+  syncUi(false, false);
+  loadFromCloud(function (cloud) {
+    if (cloud) { list = cloud; save(); renderList(); syncUi(true, true); }
+    else { syncUi(false, true); }
+  });
+}
+function loadData() {
+  /* 本機有未同步變更 → 直接補上傳（含刪除後的空列表） */
+  if (isDirty()) {
+    renderList();
+    syncUi(false, false);
+    saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
+    return;
+  }
+  syncUi(false, false);
+  loadFromCloud(function (cloud) {
+    if (cloud) {
+      /* 本機獨有舊資料補回雲端（ Migration 用，不清資料） */
+      var have = {}, added = false;
+      for (var g = 0; g < cloud.length; g++) have[recKey(cloud[g])] = 1;
+      for (var h = 0; h < list.length; h++) {
+        if (!have[recKey(list[h])]) { cloud.push(list[h]); added = true; }
+      }
+      if (added) cloud.sort(byTs);
+      list = cloud;
+      save();
+      syncUi(true, true);
+      if (added) {
+        saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
+      }
+    } else if (list.length) {
+      /* 離線或首次使用：把本機資料推上雲端 */
+      saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
+    } else {
+      syncUi(false, true);
+    }
+    renderList();
+  });
+}
+
 function esc(s) {
   var d = document.createElement('div');
   d.appendChild(document.createTextNode(s == null ? '' : String(s)));
   return d.innerHTML;
 }
+function setFilter(f) {
+  curFilter = f;
+  var ids = { all: 'f_all', open: 'f_open', done: 'f_done' };
+  for (var k in ids) {
+    var b = document.getElementById(ids[k]);
+    if (b) b.className = 'btn fbtn' + (k === f ? ' on' : '');
+  }
+  renderList();
+}
 function renderList() {
   var box = document.getElementById('list');
-  document.getElementById('cnt').textContent = list.length;
+  var nOpen = 0, nDone = 0, i;
+  var mine = visibleList();
+  for (i = 0; i < mine.length; i++) {
+    if (isReplied(mine[i])) nDone++; else nOpen++;
+  }
+  document.getElementById('cnt').textContent = mine.length;
+  var eOpen = document.getElementById('cnt_open'); if (eOpen) eOpen.textContent = nOpen;
+  var eDone = document.getElementById('cnt_done'); if (eDone) eDone.textContent = nDone;
   while (box.firstChild) { box.removeChild(box.firstChild); }
-  if (!list.length) {
+
+  /* 非管理者又沒設姓名 → 先提示，避免看到別人的東西 */
+  if (!isAdmin() && !meName) {
+    var tip = document.createElement('div');
+    tip.className = 'empty';
+    tip.appendChild(document.createTextNode('請先在上方「👤 我是」輸入姓名並按「套用」，才會顯示你自己的回報。'));
+    box.appendChild(tip);
+    return;
+  }
+
+  var view = [];
+  for (i = 0; i < mine.length; i++) {
+    var r = mine[i];
+    if (curFilter === 'open' && isReplied(r)) continue;
+    if (curFilter === 'done' && !isReplied(r)) continue;
+    view.push(r);
+  }
+  if (!view.length) {
     var e = document.createElement('div');
     e.className = 'empty';
-    e.appendChild(document.createTextNode('尚無回報資料'));
+    e.appendChild(document.createTextNode(
+      !mine.length ? (isAdmin() ? '尚無回報資料' : '你還沒有送出任何回報') :
+      (curFilter === 'open' ? '沒有未回覆的項目 🎉' : '沒有已回覆的項目')));
     box.appendChild(e);
     return;
   }
-  for (var i = list.length - 1; i >= 0; i--) {
-    (function (idx) {
-      var it = list[idx];
+  for (var k = view.length - 1; k >= 0; k--) {
+    (function (it) {
       var item = document.createElement('div');
       item.className = 'item';
-      var del = document.createElement('button');
-      del.className = 'del';
-      del.appendChild(document.createTextNode('刪除'));
-      del.onclick = function () { delOne(idx); };
-      item.appendChild(del);
+
+      if (isAdmin()) {
+        if (editingId !== it.id) {
+          var rep = document.createElement('button');
+          rep.className = 'adm';
+          rep.appendChild(document.createTextNode(it.reply ? '✎ 修改回覆' : '✎ 回覆'));
+          rep.onclick = function () { editingId = it.id; renderList(); };
+          item.appendChild(rep);
+        }
+        var del = document.createElement('button');
+        del.className = 'del';
+        del.appendChild(document.createTextNode('刪除'));
+        del.onclick = function () { delOne(it); };
+        item.appendChild(del);
+      }
       var meta = document.createElement('div');
       meta.className = 'meta';
       meta.innerHTML = stamp2(it.ts) + ' · ' + esc(it.name) +
         '<span class="badge cat">' + esc(it.cat) + '</span>' +
-        '<span class="badge pri">' + esc(it.pri) + '</span>';
+        '<span class="badge pri">' + esc(it.pri) + '</span>' +
+        (isReplied(it) ? '<span class="badge rep-done">已回覆</span>' : '<span class="badge rep-open">待回覆</span>');
       item.appendChild(meta);
       var desc = document.createElement('div');
       desc.className = 'desc';
       desc.appendChild(document.createTextNode(it.desc));
       item.appendChild(desc);
+      if (it.pdf) {
+        var a = document.createElement('a');
+        a.className = 'pdflink';
+        a.href = it.pdf;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.appendChild(document.createTextNode('📎 查看 PDF 附件'));
+        item.appendChild(a);
+      }
+
+      /* 官方回覆區（提問者只會在自己那幾筆看到）*/
+      if (it.reply) {
+        var rb = document.createElement('div');
+        rb.className = 'replybox';
+        var rh = document.createElement('div');
+        rh.className = 'rh';
+        rh.appendChild(document.createTextNode('👤 管理者回覆' + (it.replyAt ? ' · ' + stamp2(it.replyAt) : '')));
+        rb.appendChild(rh);
+        var rt = document.createElement('div');
+        rt.className = 'rt';
+        rt.appendChild(document.createTextNode(it.reply));
+        rb.appendChild(rt);
+        item.appendChild(rb);
+      }
+
+      /* 管理者回覆編輯框 */
+      if (isAdmin() && editingId === it.id) {
+        var ed = document.createElement('div');
+        ed.className = 'replyedit';
+        var ta = document.createElement('textarea');
+        ta.id = 'replyText';
+        ta.rows = 4;
+        ta.value = it.reply || '';
+        ed.appendChild(ta);
+        var acts = document.createElement('div');
+        acts.className = 'acts';
+        var okB = document.createElement('button');
+        okB.className = 'btn primary';
+        okB.appendChild(document.createTextNode('儲存回覆'));
+        okB.onclick = function () { saveReply(it); };
+        acts.appendChild(okB);
+        var caB = document.createElement('button');
+        caB.className = 'btn';
+        caB.appendChild(document.createTextNode('取消'));
+        caB.onclick = function () { editingId = ''; renderList(); };
+        acts.appendChild(caB);
+        ed.appendChild(acts);
+        item.appendChild(ed);
+      }
+
       box.appendChild(item);
-    })(i);
+    })(view[k]);
   }
 }
 function stamp2(ts) {
@@ -141,35 +511,92 @@ function stamp2(ts) {
   if (isNaN(d.getTime())) return String(ts);
   return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
+/* 儲存管理者回覆（留空＝取消回覆）*/
+function saveReply(it) {
+  var ta = gid('replyText');
+  var txt = ta ? ta.value.replace(/^\s+|\s+$/g, '') : '';
+  it.reply = txt;
+  it.replyAt = txt ? Date.now() : 0;
+  it.replied = !!txt;
+  editingId = '';
+  save();
+  renderList();
+  saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
+  if (txt) alert('已回覆。提問者下次開啟此頁（或按「🔄 同步」）就會看到。');
+}
 function submitFb() {
+  var name = document.getElementById('f_name').value.trim();
+  var desc = document.getElementById('f_desc').value.trim();
+  if (!name) { alert('請填寫姓名'); return; }
+  if (!desc) { alert('請填寫問題描述'); return; }
+  var fi = document.getElementById('f_file');
+  var file = (fi && fi.files && fi.files[0]) ? fi.files[0] : null;
+  if (!file) { doSubmit(''); return; }
+  if (!/\.pdf$/i.test(file.name)) { alert('附件只支援 PDF'); return; }
+  if (file.size > 20 * 1024 * 1024) { alert('PDF 大小上限 20MB'); return; }
+  var btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.textContent = '上傳中…';
+  uploadPdf(file, function (url) {
+    btn.disabled = false;
+    btn.textContent = '送出';
+    if (!url) { alert('PDF 上傳失敗——內容尚未送出，請重試或先不加附件送出'); return; }
+    doSubmit(url);
+  });
+}
+function doSubmit(pdfUrl) {
   var name = document.getElementById('f_name').value.trim();
   var cat = document.getElementById('f_cat').value;
   var pri = document.getElementById('f_pri').value;
   var desc = document.getElementById('f_desc').value.trim();
-  if (!name) { alert('請填寫姓名'); return; }
-  if (!desc) { alert('請填寫問題描述'); return; }
-  list.push({ ts: Date.now(), name: name, cat: cat, pri: pri, desc: desc });
+  if (!name || !desc) { alert('請填寫姓名與問題描述'); return; }
+  list.push({ id: newId(), ts: Date.now(), name: name, cat: cat, pri: pri, desc: desc, replied: false, pdf: pdfUrl || '' });
   save();
+  /* 第一次送出時，自動把姓名記成本機身分，之後只看得到自己的 */
+  if (!meName) {
+    meName = name;
+    try { localStorage.setItem(ME_KEY, name); } catch (e) {}
+    updateIdent();
+  }
   document.getElementById('f_name').value = '';
   document.getElementById('f_desc').value = '';
+  var fi = document.getElementById('f_file'); if (fi) fi.value = '';
   renderList();
-  alert('已送出，感謝你的回饋！');
+  submitToCloud(function (ok) {
+    markDirty(!ok);
+    syncUi(ok, true);
+    alert(ok ? '已送出，感謝你的回饋！已永久保存到雲端。'
+             : '已存到本機；雲端同步失敗（離線？）——資料不會遺失，恢復連線後會自動補傳。');
+  });
 }
-function delOne(idx) {
+function delOne(it) {
+  if (!isAdmin()) return;
   if (!confirm('刪除這筆回報？')) return;
+  var idx = list.indexOf(it);
+  if (idx < 0) return;
   list.splice(idx, 1); save(); renderList();
+  if (it.pdf) deletePdf(it.pdf);
+  saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
 }
 function clearFb() {
+  if (!isAdmin()) return;
   if (!confirm('清除全部回報資料？此動作無法復原')) return;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i] && list[i].pdf) deletePdf(list[i].pdf);
+  }
   list = []; save(); renderList();
+  saveToCloud(list, function (ok) { markDirty(!ok); syncUi(ok, true); });
 }
 function exportFb() {
-  if (!list.length) { alert('尚無資料可匯出'); return; }
+  var data = visibleList();
+  if (!data.length) { alert('尚無資料可匯出'); return; }
   var lines = [];
-  for (var i = 0; i < list.length; i++) {
-    var it = list[i];
-    lines.push('[' + stamp2(it.ts) + '] ' + it.name + ' / ' + it.cat + ' / ' + it.pri);
+  for (var i = 0; i < data.length; i++) {
+    var it = data[i];
+    lines.push('[' + stamp2(it.ts) + '] ' + it.name + ' / ' + it.cat + ' / ' + it.pri + ' / ' + (isReplied(it) ? '已回覆' : '待回覆'));
     lines.push(it.desc);
+    if (it.pdf) lines.push('附件：' + it.pdf);
+    if (it.reply) lines.push('管理者回覆（' + stamp2(it.replyAt) + '）：' + it.reply);
     lines.push('');
   }
   var txt = lines.join('\n');
@@ -179,7 +606,10 @@ function exportFb() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 load();
-renderList();
+meName = getMe();
+if (gid('meName')) gid('meName').value = meName;
+updateAdminUI();
+loadData();
 </script>
 </body>
 </html>
