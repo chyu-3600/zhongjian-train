@@ -212,7 +212,16 @@ td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
       .ann-box{margin:0 0 14px;background:var(--card,#fff);border:1px solid var(--border,#e5e7eb);border-left:5px solid #dc2626;border-radius:12px;padding:12px 14px}
       .ann-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
       .ann-title{font-size:14px;font-weight:800;color:#dc2626}
-      .ann-mini{font-size:12px;font-weight:700;border:1px solid var(--border,#e5e7eb);background:transparent;color:#dc2626;border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit}
+      .ann-mini{font-size:12px;font-weight:700;border:1px solid var(--border,#e5e7eb);background:transparent;color:#dc2626;border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit;margin-left:6px}
+      /* 跑馬燈 */
+      .ann-marquee{overflow:hidden;position:relative;margin-top:2px;padding:7px 0;border-radius:8px;background:linear-gradient(90deg,#fff1f2,#fff 70%);cursor:pointer}
+      .ann-mq-inner{display:inline-block;white-space:nowrap;font-size:13.5px;font-weight:700;color:#b91c1c;padding-left:100%}
+      .ann-mq-inner.run{animation-name:annScroll;animation-timing-function:linear;animation-iteration-count:infinite}
+      @keyframes annScroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+      .ann-marquee:hover .ann-mq-inner{animation-play-state:paused}
+      @media (prefers-reduced-motion: reduce){
+        .ann-mq-inner.run{animation:none;padding-left:0;white-space:normal;line-height:1.6}
+      }
       .ann-list{display:flex;flex-direction:column;gap:6px}
       .ann-item{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;line-height:1.6;padding:6px 0;border-top:1px dashed var(--border,#e5e7eb)}
       .ann-item:first-child{border-top:0;padding-top:0}
@@ -231,9 +240,15 @@ td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
     <div id="annBox" class="ann-box hidden">
       <div class="ann-head">
         <span class="ann-title">📢 公告</span>
-        <button class="ann-mini" id="annAdminBtn" onclick="annToggleEdit()">＋ 發佈公告</button>
+        <span>
+          <button class="ann-mini" id="annMoreBtn" onclick="annToggleList()">全部 ▾</button>
+          <button class="ann-mini" id="annAdminBtn" onclick="annToggleEdit()">＋ 發佈公告</button>
+        </span>
       </div>
-      <div id="annList" class="ann-list"></div>
+      <div class="ann-marquee" id="annMarquee" onclick="annToggleList()">
+        <div class="ann-mq-inner" id="annMqInner"></div>
+      </div>
+      <div id="annList" class="ann-list hidden"></div>
       <div id="annEdit" class="ann-edit hidden">
         <textarea id="annText" rows="3" placeholder="輸入公告內容（可多行，例：11/20 上午 8:00 全廠停機保養）"></textarea>
         <div class="ann-actions">
@@ -1064,6 +1079,24 @@ function annRender() {
   if (btn) btn.style.display = adm ? '' : 'none';
   if (!live.length && !adm) { box.classList.add('hidden'); return; }
   box.classList.remove('hidden');
+
+  /* 跑馬燈：多則公告用分隔符串起來橫向捲動；速度依字數調整 */
+  const mq = $('annMqInner');
+  if (mq) {
+    if (!live.length) {
+      mq.classList.remove('run');
+      mq.style.animationDuration = '';
+      mq.textContent = '目前沒有公告';
+    } else {
+      const parts = live.map(a => annDate(a.ts) + '　' + String(a.text || '').replace(/\s*\n\s*/g, '／'));
+      const txt = parts.join('　　◆　　');
+      mq.textContent = txt + '　　◆　　';
+      const dur = Math.max(14, Math.min(70, Math.round(txt.length * 0.45)));
+      mq.style.animationDuration = dur + 's';
+      mq.classList.add('run');
+    }
+  }
+
   $('annList').innerHTML = live.length
     ? live.map(a =>
         '<div class="ann-item">'
@@ -1072,6 +1105,14 @@ function annRender() {
         + (adm ? '<button class="ann-del" onclick="annDel(\'' + a.id + '\')">刪除</button>' : '')
         + '</div>').join('')
     : '<div class="ann-empty">目前沒有公告</div>';
+}
+
+function annToggleList() {
+  const l = $('annList');
+  if (!l) return;
+  l.classList.toggle('hidden');
+  const b = $('annMoreBtn');
+  if (b) b.textContent = l.classList.contains('hidden') ? '全部 ▾' : '收起 ▴';
 }
 
 function annToggleEdit() {
