@@ -276,23 +276,29 @@ function readLocal() {
   catch (e) { return []; }
 }
 function saveLocal() { localStorage.setItem(LS_DATA, JSON.stringify(data)); }
+/* 用 id 合併雲端＋本機，updated 較新者勝（共用給載入與手動同步）*/
+function mergeData(cloud, local) {
+  const map = {};
+  (cloud || []).forEach(function (r) { if (r && r.id) map[r.id] = r; });
+  (local || []).forEach(function (r) { if (r && r.id) {
+    if (!map[r.id] || String(r.updated || '') >= String(map[r.id].updated || '')) map[r.id] = r;
+  } });
+  return Object.keys(map).map(function (k) { return map[k]; });
+}
 async function loadData() {
+  // 統一「抓雲端＋合併本機」：不再用 dirty 直接覆蓋（那會讓每台各做各的互相蓋掉）
   const local = readLocal();
-  if (localStorage.getItem(LS_DIRTY) === '1' && local.length) {
-    data = local; render();
-    const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true);
+  const cloud = await loadFromCloud();
+  if (cloud === null) {
+    // 雲端抓不到（離線或尚無此列）→ 用本機，並嘗試補傳
+    data = local; render(); syncUi(false, false);
+    if (data.length) { const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true); }
     return;
   }
-  const cloud = await loadFromCloud();
-  // 關鍵：空陣列 [] 在 JS 是 truthy，但不能當成「雲端有資料」覆蓋本機，
-  // 否則本機尚未上傳的記錄會被清掉。只有雲端確實有內容才以雲端為準。
-  if (cloud && cloud.length) { data = cloud; saveLocal(); syncUi(true, true); }
-  else {
-    data = local; syncUi(cloud ? true : false, cloud ? true : false);
-    if (data.length) { const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true); }
-    else if (cloud) syncUi(true, true);
-  }
-  render();
+  data = mergeData(cloud, local);
+  saveLocal(); render();
+  const ok = await saveToCloud(data); // 把合併結果寫回雲端，讓所有裝置一致
+  markDirty(!ok); syncUi(ok, true);
 }
 /* 雙向合併同步：抓雲端＋本機，用 id 去重合併後寫回兩邊（避免任一台覆蓋另一台）*/
 async function syncNow() {
@@ -301,13 +307,7 @@ async function syncNow() {
   try {
     const local = readLocal();
     const cloud = await loadFromCloud();
-    const map = {};
-    (cloud || []).forEach(function (r) { if (r && r.id) map[r.id] = r; });
-    local.forEach(function (r) { if (r && r.id) {
-      // 本機若有較新的 updated 就覆蓋，否則保留雲端版本
-      if (!map[r.id] || String(r.updated || '') >= String(map[r.id].updated || '')) map[r.id] = r;
-    } });
-    data = Object.keys(map).map(function (k) { return map[k]; });
+    data = mergeData(cloud, local);
     saveLocal(); render();
     const ok = await saveToCloud(data);
     markDirty(!ok); syncUi(ok, true);
