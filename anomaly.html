@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Pragma" content="no-cache">
 <title>產品異常與改進</title>
 <style>
 :root{
@@ -105,6 +107,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--fg);
 
   <div class="tb">
     <button class="btn primary" onclick="openForm()">＋ 新增記錄</button>
+    <button class="btn" onclick="syncNow()" id="btnSync" title="強制把本機記錄推送到雲端">🔄 同步</button>
     <input class="search" id="kw" placeholder="搜尋標題／單號／機台／客戶／類別／內容…" oninput="kw=this.value;render()">
     <button class="btn" onclick="exportJson()" title="匯出 JSON 備份">匯出備份</button>
   </div>
@@ -265,12 +268,25 @@ async function loadData() {
     return;
   }
   const cloud = await loadFromCloud();
-  if (cloud) { data = cloud; saveLocal(); syncUi(true, true); }
+  // 關鍵：空陣列 [] 在 JS 是 truthy，但不能當成「雲端有資料」覆蓋本機，
+  // 否則本機尚未上傳的記錄會被清掉。只有雲端確實有內容才以雲端為準。
+  if (cloud && cloud.length) { data = cloud; saveLocal(); syncUi(true, true); }
   else {
-    data = local; syncUi(false, false);
+    data = local; syncUi(cloud ? true : false, cloud ? true : false);
     if (data.length) { const ok = await saveToCloud(data); markDirty(!ok); syncUi(ok, true); }
+    else if (cloud) syncUi(true, true);
   }
   render();
+}
+/* 強制同步：以本機為準整包推上雲端（適合「別台看不到」時手動補傳）*/
+async function syncNow() {
+  const btn = $('btnSync');
+  btn.disabled = true; btn.textContent = '同步中…';
+  if (!data.length) { toast('目前沒有記錄可同步'); btn.disabled = false; btn.textContent = '🔄 同步'; return; }
+  const ok = await saveToCloud(data);
+  markDirty(!ok); syncUi(ok, true);
+  toast(ok ? '已強制同步到雲端' : '同步失敗，資料仍留在本機');
+  btn.disabled = false; btn.textContent = '🔄 同步';
 }
 
 /* ═══ 檔案上傳（Supabase storage bucket 'media'，路徑 anomaly/）═══ */
