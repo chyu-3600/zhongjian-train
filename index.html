@@ -425,7 +425,8 @@ const SAFETY = [
 
 const TOOLS = [
   { name: '工作備忘錄', ico: 'icons/memo.png', cls: 'g-pink', file: 'notebook/index.html', sub: '自訂分類 · 圖片/PDF 附檔 · 日夜切換（筆記資料獨立儲存，不影響課程與訓練記錄）' },
-  { name: '模具記錄', ico: 'icons/mold.png', cls: 'g-teal', file: 'mold-record.html', sub: '一模具一頁：尺寸／類型／編號／位置／產品／cad × 1D–6D ＋備註，可匯出 PDF' },
+  { name: '模具記錄', ico: 'icons/mold.png', cls: 'g-teal', url: 'https://mold-manager.vercel.app', sub: '冷鍛模具管理（雲端版）· 產品檔案與圖稿 ZIP 匯入／匯出 · 新增產品編號名稱客戶 · 明暗主題（另開新分頁）', back: "openTools()" },
+  { name: '冷鍛模具管理', ico: 'icons/forge.png', cls: 'g-orange', url: 'https://mold-manager.vercel.app', sub: '冷鍛模具管理（雲端版）· 產品檔案與圖稿 ZIP 匯入／匯出 · 新增產品編號名稱客戶 · 明暗主題（另開新分頁）', back: "openTools()" },
 ];
 
 // 機台操作：點選機台課程（新增機台 → 在此加一列 { name, ico, cls, file, sub, back }，再把 HTML 檔放 repo 根目錄）
