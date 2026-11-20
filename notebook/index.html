@@ -16,7 +16,7 @@
 
   <section id="app-screen" class="app-screen">
     <header class="app-header">
-      <h1><img class="logo" src="../assets/zhongjian-logo-512.jpg" alt="忠鍵" />工作備忘錄</h1>
+      <h1>📝 工作備忘錄</h1>
       <div class="header-actions">
         <button id="btn-cat-manage" title="分類管理">🏷️</button>
         <button id="theme-toggle" title="切換日/夜">🌙</button>
@@ -73,6 +73,10 @@
         <div id="pdf-preview-wrap" class="preview-wrap hidden">
           <a id="pdf-link" target="_blank" rel="noopener">📄 開啟 PDF</a>
         </div>
+        <div class="file-row">
+          <label for="note-youtube">YouTube 連結</label>
+          <input type="url" id="note-youtube" placeholder="https://www.youtube.com/watch?v=... 或youtu.be/..." />
+        </div>
 
         <div class="modal-actions">
           <button type="button" id="btn-cancel" class="btn-secondary">取消</button>
@@ -94,6 +98,15 @@
       <div class="modal-actions">
         <button type="button" id="btn-cat-close" class="btn-secondary">完成</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 通用確認 Dialog：不依賴瀏覽器 confirm（WebView 保險） -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-content confirm-box">
+      <h2 id="confirm-title">確認</h2>
+      <p id="confirm-msg"></p>
+      <div id="confirm-actions" class="modal-actions"></div>
     </div>
   </div>
 
