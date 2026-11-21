@@ -467,6 +467,13 @@ main#view{padding:16px 16px 28px;display:block}
   'use strict';
 
   var STORAGE_KEY = 'exam_sprint_v2';
+  var SB_URL  = 'https://rexdmoitodwrtdjsjqvl.supabase.co';
+  var SB_ANON = 'sb_publishable_wDeSjVSoY_mLVO_caIPjLw_wh2_ckby';
+  var SB_KEY  = 'exam_v1';
+  var cloudTimer = null;
+  var cloudPulling = false;
+  var cloudStatus = '';
+  var cloudLastOk = 0;
   var LETTERS = 'ABCD';
   var state = {
     tab: 'home',
@@ -563,7 +570,8 @@ main#view{padding:16px 16px 28px;display:block}
       profileId: null,
       adminSessionId: null,
       wrongIds: [],
-      attempts: []
+      attempts: [],
+      deleted: { questions:[], admins:[], registrations:[], attempts:[], wrongIds:[] }
     };
   }
 
@@ -582,7 +590,8 @@ main#view{padding:16px 16px 28px;display:block}
         profileId: saved.profileId || null,
         adminSessionId: saved.adminSessionId || null,
         wrongIds: Array.isArray(saved.wrongIds) ? saved.wrongIds : [],
-        attempts: Array.isArray(saved.attempts) ? saved.attempts : []
+        attempts: Array.isArray(saved.attempts) ? saved.attempts : [],
+        deleted: saved.deleted && typeof saved.deleted === 'object' ? saved.deleted : {}
       };
       QUESTIONS = db.questions;
       var legacyPasswords = {'adm-1':'admin123','adm-2':'manager123'};
@@ -603,15 +612,172 @@ main#view{padding:16px 16px 28px;display:block}
     }
   }
 
-  function saveDB(){
+  function saveLocal(){
     try{
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
     }catch(e){
       if(!storageWarned){
         storageWarned = true;
-        toast('本機儲存不可用，本次資料僅保留在畫面中');
+        toast('本機儲存空間不足，資料仍會備份到雲端');
       }
     }
+  }
+  function saveDB(){
+    saveLocal();
+    schedulePush();
+  }
+
+  /* ============ 雲端同步（Supabase tool_storage，ES5 XHR）============ */
+  function sbDirect(method, path, body, headers, cb){
+    var xhr = new XMLHttpRequest();
+    var fin = false, t0 = Date.now();
+    function done(ok, status, json, err){
+      if(fin) return;
+      fin = true;
+      cb({ ok: ok, status: status, json: json, ms: Date.now() - t0, err: err || '' });
+    }
+    try{
+      xhr.open(method, SB_URL + path, true);
+      xhr.setRequestHeader('apikey', SB_ANON);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + SB_ANON);
+      if(headers){
+        for(var k in headers){
+          if(headers.hasOwnProperty(k)) xhr.setRequestHeader(k, headers[k]);
+        }
+      }
+      xhr.timeout = 25000;
+      xhr.onreadystatechange = function(){
+        if(xhr.readyState !== 4) return;
+        var json = null;
+        try{ json = JSON.parse(xhr.responseText); }catch(e){}
+        done(xhr.status >= 200 && xhr.status < 300, xhr.status, json, '');
+      };
+      xhr.ontimeout = function(){ done(false, 0, null, '逾時'); };
+      xhr.onerror   = function(){ done(false, 0, null, '網路錯誤'); };
+      xhr.send(body === null || body === undefined ? null : body);
+    }catch(e){
+      done(false, 0, null, 'XHR:' + e.message);
+    }
+  }
+
+  function cloudPack(){
+    return {
+      v: 1,
+      exam: db.exam,
+      admins: db.admins,
+      questions: db.questions,
+      registrations: db.registrations,
+      attempts: db.attempts,
+      wrongIds: db.wrongIds,
+      deleted: db.deleted || {}
+    };
+  }
+
+  function stamp(x){
+    if(!x || typeof x !== 'object') return '';
+    return x.updatedAt || x.createdAt || x.at || '';
+  }
+  function mergeArr(local, remote){
+    if(!Array.isArray(local)) local = [];
+    if(!Array.isArray(remote)) remote = [];
+    var map = {};
+    function put(x){
+      if(!x || !x.id) return;
+      var old = map[x.id];
+      if(!old || stamp(x) >= stamp(old)) map[x.id] = x;
+    }
+    local.forEach(put);
+    remote.forEach(put);
+    var out = [];
+    for(var id in map){ if(map.hasOwnProperty(id)) out.push(map[id]); }
+    return out;
+  }
+  function cleanDead(arr, dead){
+    if(!Array.isArray(dead)) return arr || [];
+    return (arr || []).filter(function(x){ return x && dead.indexOf(x.id) < 0; });
+  }
+  function mergeCloud(cloud){
+    if(!cloud || typeof cloud !== 'object') return false;
+    var before = JSON.stringify(cloudPack());
+    var del = db.deleted || {};
+    var cdel = cloud.deleted || {};
+    ['questions','admins','registrations','attempts','wrongIds'].forEach(function(k){
+      var arr = cdel[k];
+      if(!Array.isArray(arr)) return;
+      if(!Array.isArray(del[k])) del[k] = [];
+      arr.forEach(function(id){ if(del[k].indexOf(id) < 0) del[k].push(id); });
+    });
+    db.deleted = del;
+    db.questions    = cleanDead(mergeArr(db.questions, cloud.questions), del.questions);
+    db.admins       = cleanDead(mergeArr(db.admins, cloud.admins), del.admins);
+    db.registrations= cleanDead(mergeArr(db.registrations, cloud.registrations), del.registrations);
+    db.attempts     = cleanDead(mergeArr(db.attempts, cloud.attempts), del.attempts);
+    var wv = mergeArr(
+      (db.wrongIds || []).map(function(id){ return {id:id}; }),
+      (cloud.wrongIds || []).map(function(id){ return {id:id}; })
+    ).map(function(x){ return x.id; });
+    db.wrongIds = cleanDead(wv, del.wrongIds);
+    if(!db.admins.length) db.admins = defaultDB().admins;
+    if(cloud.exam && stamp(cloud.exam) >= stamp(db.exam)) db.exam = cloud.exam;
+    QUESTIONS = db.questions;
+    var after = JSON.stringify(cloudPack());
+    return before !== after;
+  }
+
+  function cloudTime(){
+    try{ return new Date().toLocaleTimeString('zh-TW', {hour12:false}); }catch(e){ return ''; }
+  }
+  function cloudPull(cb){
+    if(cloudPulling){ if(cb) cb(false); return; }
+    cloudPulling = true;
+    sbDirect('GET', '/rest/v1/tool_storage?key=eq.' + SB_KEY + '&select=data',
+      null, null, function(r){
+        cloudPulling = false;
+        if(!r.ok || !r.json || !r.json.length || !r.json[0].data){
+          cloudStatus = '讀取失敗（本機資料仍可用）';
+          if(cb) cb(false);
+          return;
+        }
+        var changed = mergeCloud(r.json[0].data);
+        if(changed) saveLocal();
+        cloudStatus = '雲端已同步 ' + cloudTime();
+        cloudLastOk = Date.now();
+        if(cb) cb(true);
+      });
+  }
+  function cloudPush(){
+    var pack = cloudPack();
+    sbDirect('PATCH', '/rest/v1/tool_storage?key=eq.' + SB_KEY,
+      JSON.stringify({ data: pack }),
+      { 'Content-Type':'application/json', 'Prefer':'return=representation' },
+      function(r){
+        if(r.ok && r.json && r.json.length){
+          cloudStatus = '雲端已備份 ' + cloudTime();
+          cloudLastOk = Date.now();
+          return;
+        }
+        var needCreate = !r.ok || r.status === 404 || r.status === 406 || r.status === 400;
+        if(needCreate){
+          sbDirect('POST', '/rest/v1/tool_storage',
+            JSON.stringify({ key: SB_KEY, data: pack }),
+            { 'Content-Type':'application/json', 'Prefer':'resolution=merge-duplicates,return=representation' },
+            function(r2){
+              cloudStatus = r2.ok ? ('雲端已備份 ' + cloudTime()) : '雲端備份失敗（本機資料仍在）';
+              if(r2.ok) cloudLastOk = Date.now();
+            });
+        }else{
+          cloudStatus = '雲端備份失敗（本機資料仍在）';
+        }
+      });
+  }
+  function schedulePush(){
+    if(cloudTimer) clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(function(){ cloudTimer = null; cloudPush(); }, 900);
+  }
+  function markDeleted(kind, id){
+    if(!db.deleted) db.deleted = {};
+    if(!Array.isArray(db.deleted[kind])) db.deleted[kind] = [];
+    if(db.deleted[kind].indexOf(id) < 0) db.deleted[kind].push(id);
   }
 
   function currentProfile(){
@@ -1445,6 +1611,29 @@ main#view{padding:16px 16px 28px;display:block}
     formEl.dataset.image = (q && q.image) ? q.image : '';
   }
 
+  function dataUrlToBlob(dataUrl){
+    var parts = String(dataUrl).split(',');
+    if(parts.length < 2) return null;
+    var mimeMatch = parts[0].match(/:(.*?);/);
+    var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    var bin = atob(parts[1]);
+    var n = bin.length;
+    var u8 = new Uint8Array(n);
+    while(n--){ u8[n] = bin.charCodeAt(n); }
+    return new Blob([u8], { type: mime });
+  }
+  function uploadQuestionImage(dataUrl, cb){
+    var blob = dataUrlToBlob(dataUrl);
+    if(!blob){ cb(null); return; }
+    var path = 'exam/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.jpg';
+    sbDirect('POST', '/storage/v1/object/media/' + path, blob,
+      { 'Content-Type':'image/jpeg', 'x-upsert':'true' },
+      function(r){
+        if(!r.ok){ cb(null); return; }
+        cb(SB_URL + '/storage/v1/object/public/media/' + path);
+      });
+  }
+
   function compressQuestionImage(file, done){
     var reader = new FileReader();
     reader.onerror = function(){ done(null); };
@@ -1582,6 +1771,7 @@ main#view{padding:16px 16px 28px;display:block}
     if(action === 'chip'){ state.cat = value; render(); return; }
     if(action === 'remove-wrong'){
       db.wrongIds = db.wrongIds.filter(function(id){ return id !== value; });
+      markDeleted('wrongIds', value);
       saveDB(); render(); toast('已從錯題本移除');
       return;
     }
@@ -1593,6 +1783,7 @@ main#view{padding:16px 16px 28px;display:block}
       confirmDialog('刪除題目', '確定刪除「'+dq.q+'」嗎？', function(){
         QUESTIONS = QUESTIONS.filter(function(x){ return x.id !== value; });
         db.questions = QUESTIONS;
+        markDeleted('questions', value);
         db.wrongIds = db.wrongIds.filter(function(id){ return id !== value; });
         saveDB(); render(); toast('題目已刪除');
       }, '確定刪除');
@@ -1600,8 +1791,14 @@ main#view{padding:16px 16px 28px;display:block}
     }
     if(action === 'reset-questions'){
       confirmDialog('回復預設題庫', '將以內建 '+DEFAULT_QUESTIONS.length+' 題取代目前題庫，自訂題目會消失。', function(){
+        QUESTIONS.forEach(function(q){ markDeleted('questions', q.id); });
         QUESTIONS = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
         db.questions = QUESTIONS;
+        if(!Array.isArray(db.deleted.questions)) db.deleted.questions = [];
+        QUESTIONS.forEach(function(q){
+          var i = db.deleted.questions.indexOf(q.id);
+          if(i >= 0) db.deleted.questions.splice(i, 1);
+        });
         db.wrongIds = db.wrongIds.filter(function(id){
           return QUESTIONS.some(function(q){ return q.id === id; });
         });
@@ -1637,12 +1834,14 @@ main#view{padding:16px 16px 28px;display:block}
       var now = new Date();
       db.exam.startAt = now.toISOString();
       db.exam.endAt = new Date(now.getTime() + 60*60*1000).toISOString();
+      db.exam.updatedAt = new Date().toISOString();
       saveDB(); render(); toast('已設定為立即開始，1 小時後結束');
       return;
     }
     if(action === 'extend-exam'){
       var base = Math.max(Date.now(), new Date(db.exam.endAt).getTime() || 0);
       db.exam.endAt = new Date(base + 30*60*1000).toISOString();
+      db.exam.updatedAt = new Date().toISOString();
       saveDB(); render(); toast('結束時間已延長 30 分鐘');
       return;
     }
@@ -1651,8 +1850,9 @@ main#view{padding:16px 16px 28px;display:block}
       if(!reg) return;
       confirmDialog('刪除報名', '確定刪除「'+reg.name+'」的報名資料嗎？', function(){
         db.registrations = db.registrations.filter(function(r){ return r.id !== value; });
+        markDeleted('registrations', value);
         if(db.profileId === value) db.profileId = null;
-        saveDB(); render(); toast('已刪除報名資料');
+        saveDB(); render(); toast('報名資料已刪除');
       }, '確定刪除');
       return;
     }
@@ -1663,7 +1863,8 @@ main#view{padding:16px 16px 28px;display:block}
       if(adm.id === db.adminSessionId){ toast('無法刪除目前登入的帳號'); return; }
       confirmDialog('刪除管理員', '確定刪除管理員「'+adm.name+'（@'+adm.username+'）」嗎？', function(){
         db.admins = db.admins.filter(function(a){ return a.id !== value; });
-        saveDB(); render(); toast('已刪除管理員');
+        markDeleted('admins', value);
+        saveDB(); render(); toast('管理員已刪除');
       }, '確定刪除');
       return;
     }
@@ -1749,6 +1950,7 @@ main#view{padding:16px 16px 28px;display:block}
       db.exam.title = title;
       db.exam.startAt = new Date(s).toISOString();
       db.exam.endAt = new Date(en).toISOString();
+      db.exam.updatedAt = new Date().toISOString();
       saveDB();
       render();
       toast('考試時間已儲存');
@@ -1784,11 +1986,6 @@ main#view{padding:16px 16px 28px;display:block}
         targetQ = QUESTIONS.filter(function(x){ return x.id === qid; })[0];
         if(!targetQ){ formError(form, '題目不存在，請關閉後重新操作'); return; }
       }
-      var projected = JSON.stringify(db).length + imageData.length - (targetQ && targetQ.image ? targetQ.image.length : 0);
-      if(projected > 4000000){
-        formError(form, '本機儲存空間不足，請先刪除部分含圖題目，或改用較小的圖片');
-        return;
-      }
       if(targetQ){
         targetQ.cat = qcat;
         targetQ.q = qtext;
@@ -1796,10 +1993,11 @@ main#view{padding:16px 16px 28px;display:block}
         targetQ.opts = qopts;
         targetQ.ans = qans;
         targetQ.exp = qexp;
+        targetQ.updatedAt = new Date().toISOString();
         if(imageData) targetQ.image = imageData;
         else delete targetQ.image;
       }else{
-        var newQuestion = {id:uid('q'),cat:qcat,q:qtext,type:qtype,opts:qopts,ans:qans,exp:qexp};
+        var newQuestion = {id:uid('q'),cat:qcat,q:qtext,type:qtype,opts:qopts,ans:qans,exp:qexp,updatedAt:new Date().toISOString()};
         if(imageData) newQuestion.image = imageData;
         QUESTIONS.push(newQuestion);
       }
@@ -1872,22 +2070,33 @@ main#view{padding:16px 16px 28px;display:block}
     var hint = form.querySelector('.image-field .hint');
     if(hint) hint.textContent = '圖片處理中，請稍候…';
     compressQuestionImage(file, function(data){
-      input.disabled = false;
-      form.dataset.processing = '';
       if(!data){
+        input.disabled = false;
+        form.dataset.processing = '';
         formError(form, '圖片讀取失敗，請換一張圖片再試');
-        if(hint) hint.textContent = '支援 JPG、PNG，會自動壓縮後存在本機；建議單張不超過 5MB。';
+        if(hint) hint.textContent = '支援 JPG、PNG，會自動壓縮並上傳雲端；建議單張不超過 8MB。';
         input.value = '';
         return;
       }
-      form.dataset.image = data;
-      var preview = form.querySelector('[data-image-preview]');
-      if(preview){
-        preview.classList.add('show');
-        var previewImg = preview.querySelector('img');
-        if(previewImg) previewImg.src = data;
-      }
-      if(hint) hint.textContent = '已加入附圖，儲存後生效；可重新選擇替換。';
+      if(hint) hint.textContent = '圖片壓縮完成，正在上傳雲端…';
+      uploadQuestionImage(data, function(url){
+        input.disabled = false;
+        form.dataset.processing = '';
+        if(!url){
+          formError(form, '圖片上傳雲端失敗，請檢查網路後再試');
+          if(hint) hint.textContent = '上傳失敗，請重新選擇圖片。';
+          input.value = '';
+          return;
+        }
+        form.dataset.image = url;
+        var preview = form.querySelector('[data-image-preview]');
+        if(preview){
+          preview.classList.add('show');
+          var previewImg = preview.querySelector('img');
+          if(previewImg) previewImg.src = url;
+        }
+        if(hint) hint.textContent = '已加入附圖（存於雲端），儲存後生效；可重新選擇替換。';
+      });
     });
   });
 
@@ -1912,6 +2121,16 @@ main#view{padding:16px 16px 28px;display:block}
   if(db.adminSessionId && !currentAdmin()) db.adminSessionId = null;
   state.lastExamCode = examStatus().code;
   render();
+  cloudPull(function(){
+    if(db.adminSessionId && !currentAdmin()) db.adminSessionId = null;
+    render();
+  });
+  setInterval(function(){
+    if(state.view !== 'quiz') cloudPull(function(){ if(state.view !== 'quiz') render(); });
+  }, 20000);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && state.view !== 'quiz') cloudPull(function(){ if(state.view !== 'quiz') render(); });
+  });
 })();
 </script>
 </body>
