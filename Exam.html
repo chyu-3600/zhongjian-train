@@ -619,12 +619,19 @@ main#view{padding:16px 16px 28px;display:block}
     return db.registrations.filter(function(r){ return r.id === db.profileId; })[0] || null;
   }
 
+  // 題庫含正確答案：學員須完成正式測驗交卷後才開放；管理員不受限（2026-11-21）
+  function hasSubmittedExam(){
+    if(currentAdmin()) return true;   // 管理員可隨時查看題庫與答案
+    if(!currentProfile()) return false;
+    return db.attempts.some(function(a){ return a.mode === 'exam'; });
+  }
+
   function gateHtml(title, message){
     return '<div class="page-head"><h2>'+esc(title)+'</h2><span class="sub">需先報名</span></div>' +
       '<div class="card gate-card">' +
         '<span class="badge before">尚未完成報名</span>' +
         '<h3>'+esc(message)+'</h3>' +
-        '<p class="muted small">報名時必須填寫姓名，完成後才能查看題庫、練習與正式測驗題目。</p>' +
+        '<p class="muted small">報名時必須填寫姓名，完成後才能使用練習模式與正式測驗；題庫內含正確答案，須正式測驗交卷後才可查看。</p>' +
         '<button class="btn primary block" type="button" data-action="go" data-value="register">立即填寫姓名報名</button>' +
       '</div>';
   }
@@ -740,7 +747,7 @@ main#view{padding:16px 16px 28px;display:block}
 
     if(!p){
       html += '<div class="card">';
-      html += '  <div class="notice">報名時必須填寫姓名，完成後才能查看題目、使用練習模式與進入正式測驗。</div>';
+      html += '  <div class="notice">報名時必須填寫姓名，完成後才能使用練習模式與進入正式測驗；題庫內含答案，須正式測驗交卷後開放。</div>';
       html += '  <div style="margin-top:12px"><button class="btn primary block" type="button" data-action="go" data-value="register">立即報名</button></div>';
       html += '</div>';
     }else{
@@ -772,7 +779,7 @@ main#view{padding:16px 16px 28px;display:block}
     html += '    <button class="btn ghost block" type="button" data-action="start-practice" '+(p ? '' : 'disabled')+'>練習模式（不列入考試成績）</button>';
     html += '  </div>';
     if(!p){
-      html += '  <p class="small muted" style="margin:9px 0 0;text-align:center">請先完成報名並填寫姓名，才能查看題目與開始測驗。</p>';
+      html += '  <p class="small muted" style="margin:9px 0 0;text-align:center">請先完成報名並填寫姓名，才能開始練習與測驗；題庫答案於正式測驗交卷後開放。</p>';
     }else if(st.code !== 'open'){
       html += '  <p class="small muted" style="margin:9px 0 0;text-align:center">目前不在考試時間內，仍可使用練習模式。</p>';
     }
@@ -788,7 +795,16 @@ main#view{padding:16px 16px 28px;display:block}
   }
 
   function renderLibrary(){
-    if(!currentProfile()) return gateHtml('題庫','完成報名後才能查看題目。');
+    if(!currentProfile() && !currentAdmin()) return gateHtml('題庫','完成報名後才能查看題目。');
+    if(!hasSubmittedExam()){
+      return '<div class="page-head"><h2>題庫</h2><span class="sub">交卷後開放</span></div>' +
+        '<div class="card gate-card">' +
+          '<span class="badge before">尚未交卷</span>' +
+          '<h3>完成正式測驗並交卷後，才能查看題庫與答案</h3>' +
+          '<p class="muted small">題庫內含正確答案與解析。為確保考試公平，請先完成報名，並在考試時間內完成正式測驗、點「交卷」；之後即可查看題庫答案。</p>' +
+          '<button class="btn primary block" type="button" data-action="go" data-value="home">返回首頁開始測驗</button>' +
+        '</div>';
+    }
     var cats = ['全部'];
     QUESTIONS.forEach(function(q){ if(cats.indexOf(q.cat) < 0) cats.push(q.cat); });
     var list = state.cat === '全部' ? QUESTIONS : QUESTIONS.filter(function(q){ return q.cat === state.cat; });
@@ -1346,9 +1362,16 @@ main#view{padding:16px 16px 28px;display:block}
   }
 
   function openQuestion(id){
-    if(!currentProfile()){
+    if(!currentProfile() && !currentAdmin()){
       toast('請先完成報名並填寫姓名，才能查看題目');
       state.view = 'register';
+      render();
+      return;
+    }
+    if(!hasSubmittedExam()){
+      toast('請先完成正式測驗並交卷，才能查看題庫答案');
+      state.tab = 'library';
+      state.view = 'main';
       render();
       return;
     }
