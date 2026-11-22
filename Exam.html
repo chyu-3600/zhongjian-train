@@ -756,7 +756,8 @@ main#view{padding:16px 16px 28px;display:block}
           cloudLastOk = Date.now();
           return;
         }
-        var needCreate = !r.ok || r.status === 404 || r.status === 406 || r.status === 400;
+        var emptyResult = r.ok && r.json && r.json.length === 0;
+        var needCreate = !r.ok || r.status === 404 || r.status === 406 || r.status === 400 || emptyResult;
         if(needCreate){
           sbDirect('POST', '/rest/v1/tool_storage',
             JSON.stringify({ key: SB_KEY, data: pack }),
@@ -2121,9 +2122,11 @@ main#view{padding:16px 16px 28px;display:block}
   if(db.adminSessionId && !currentAdmin()) db.adminSessionId = null;
   state.lastExamCode = examStatus().code;
   render();
-  cloudPull(function(){
+  cloudPull(function(ok){
     if(db.adminSessionId && !currentAdmin()) db.adminSessionId = null;
     render();
+    // 雲端尚無資料（首次使用）→ 把本機資料主動推上雲端建立 exam_v1
+    if(!ok && !cloudPulling) cloudPush();
   });
   setInterval(function(){
     if(state.view !== 'quiz') cloudPull(function(){ if(state.view !== 'quiz') render(); });
